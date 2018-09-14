@@ -1,0 +1,27 @@
+{
+  "name": "chatterboxtranslatorbot",
+  "version": "1.0.0",
+  "description": "ChatterboxTranslator as a Twitch Bot!",
+  "main": "app.js",
+  "scripts": {
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/instafluff/DinoPoints.git"
+  },
+  "author": "Instafluff",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/instafluff/DinoPoints/issues"
+  },
+  "homepage": "https://github.com/instafluff/DinoPoints#readme",
+  "dependencies": {
+    "dotenv": "^6.0.0",
+    "google-translate-api": "^2.3.0",
+    "node-storage": "0.0.7",
+    "nosql": "^6.1.0",
+    "twitch-js": "^1.2.14"
+  }
+}
