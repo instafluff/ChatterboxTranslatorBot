@@ -2,6 +2,7 @@ require('dotenv').config();
 var fs = require('fs');
 var TwitchJS = require('twitch-js');
 var translate = require('google-translate-api');
+var request = require('request');
 var Storage = require('node-storage');
 var store = new Storage("channels.db");
 var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
@@ -97,21 +98,20 @@ client.on('chat', (channel, userstate, message, self) => {
       var word = globalblacklist[ i ];
       if( word && messageLC.startsWith( word ) ) return;
     }
-    translate(message, {to: language}).then(res => {
-      let text = res.text || "";
-      // console.log(res.text);
-      //=> I speak English
-      // console.log(res.from.language.iso);
-      //=> nl
-      let langFrom = res.from.language.iso;
-      if( res && langFrom && !langFrom.startsWith( language ) ) {
-  			if (text == message) return; // No need to translate back to itself
-        if( text.split(" ") )
-  			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + " said, \"" + text +"\"" );
-  		}
-    }).catch(err => {
-        console.error(err);
-    });
+
+    request.get("https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" +
+			encodeURI( message ), (err, res, body) => {
+        let resp = JSON.parse(body);
+        if( resp && resp[ "lang" ] ) {
+          let text = resp[ "text" ][ 0 ] || "";
+          let langFrom = resp[ "lang" ];
+          if( langFrom && !langFrom.startsWith( language ) ) {
+      			if (text == message) return; // No need to translate back to itself
+            if( text.split(" ") )
+      			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + " said, \"" + text +"\"" );
+      		}
+        }
+      });
   }
 });
 
