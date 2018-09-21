@@ -70,6 +70,8 @@ client.on('chat', (channel, userstate, message, self) => {
       break;
     case "!languagestop":
     case "!langstop":
+      delete channels[ channel ];
+      store.put("channels", channels);
       client.say( channel, "Goodbye!!!" );
       client.part( channel );
       break;
