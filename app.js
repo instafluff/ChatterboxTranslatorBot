@@ -1,8 +1,10 @@
 require('dotenv').config();
+var fs = require('fs');
 var TwitchJS = require('twitch-js');
 var translate = require('google-translate-api');
 var Storage = require('node-storage');
 var store = new Storage("channels.db");
+var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
 
 var channels = store.get("channels") || {};
 var defaultLang = "en";
@@ -33,6 +35,7 @@ client.on('chat', (channel, userstate, message, self) => {
   let isBroadcaster = ( "#" + userstate[ "username" ] ) == channel;
   let isMod = userstate[ "mod" ];
   let userChannel = "#" + userstate[ "username" ];
+  if( self ) return;
 
   if( channel == "#" + process.env.TWITCHUSER ) {
     switch( message ) {
@@ -61,11 +64,8 @@ client.on('chat', (channel, userstate, message, self) => {
     switch( message ) {
     case "!languagelist":
     case "!langlist":
-      var supportedlanguages = Object.keys( translate.languages );
-      delete supportedlanguages[ "auto" ];
-      delete supportedlanguages[ "isSupported" ];
-      delete supportedlanguages[ "getCode" ];
-      client.say( channel, "My supported languages are: " + supportedlanguages.join(", ") );
+      var supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join(", ");
+      client.say( channel, "My supported languages are: " + supportedlanguages );
       break;
     case "!languagestop":
     case "!langstop":
@@ -91,6 +91,11 @@ client.on('chat', (channel, userstate, message, self) => {
     if( channel === "#instafluff" && message === "hahahahahahaha" ) {
       client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + " said, \"depression.\"" );
       return;
+    }
+    var messageLC = message.toLowerCase();
+    for( var i = 0, len = globalblacklist.length; i < len; i++ ) {
+      var word = globalblacklist[ i ];
+      if( word && messageLC.startsWith( word ) ) return;
     }
     translate(message, {to: language}).then(res => {
       let text = res.text || "";
