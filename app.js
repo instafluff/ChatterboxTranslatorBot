@@ -50,7 +50,7 @@ client.on('chat', (channel, userstate, message, self) => {
   }
 
   if( isBroadcaster || isMod ) {
-    if( message.startsWith("!lang ") ) {
+    if( message.startsWith("!lang ") || message.startsWith("!language ") ) {
       var targetLanguage = message.split(" ")[ 1 ].trim();
       if( translate.languages.isSupported( targetLanguage ) ) {
         channels[ channel ][ "lang" ] = translate.languages.getCode( targetLanguage );
@@ -59,28 +59,28 @@ client.on('chat', (channel, userstate, message, self) => {
       return;
     }
     switch( message ) {
-    case "!supportedlanguages":
-    case "!supportedlang":
-      var supportedlanguages = Object.keys( translate.languages ).join(", ");
+    case "!languagelist":
+    case "!langlist":
+      var supportedlanguages = Object.keys( translate.languages );
       delete supportedlanguages[ "auto" ];
       delete supportedlanguages[ "isSupported" ];
       delete supportedlanguages[ "getCode" ];
-      client.say( channel, "My supported languages are: " + supportedlanguages );
+      client.say( channel, "My supported languages are: " + supportedlanguages.join(", ") );
       break;
-    case "!stoptranslating":
-    case "!stoptrans":
+    case "!languagestop":
+    case "!langstop":
       client.say( channel, "Goodbye!!!" );
       client.part( channel );
       break;
+    case "!languagecolor":
     case "!langcolor":
       channels[ channel ][ "color" ] = !( channels[ channel ][ "color" ] || false );
       store.put("channels", channels);
       client.say( channel, "Chat color was " + ( channels[ channel ][ "color" ] ? "ENABLED" : "DISABLED" ) );
       break;
-    case "!translatorcommands":
-    case "!translator":
-    case "!translatorhelp":
-      client.say( channel, "My commands are !lang [language], !supportedlanguages, !langcolor" );
+    case "!languagehelp":
+    case "!langhelp":
+      client.say( channel, "My commands are !lang [language], !langlist, !langcolor, !langstop" );
       break;
     }
   }
@@ -88,6 +88,10 @@ client.on('chat', (channel, userstate, message, self) => {
   if( channels[ channel ] ) {
     let language = channels[ channel ][ "lang" ];
     if( message.startsWith("!") ) return;
+    if( channel === "#instafluff" && message === "hahahahahahaha" ) {
+      client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + " said, \"depression.\"" );
+      return;
+    }
     translate(message, {to: language}).then(res => {
       let text = res.text || "";
       // console.log(res.text);
