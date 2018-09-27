@@ -7,6 +7,7 @@ var Storage = require('node-storage');
 var store = new Storage("channels.db");
 var translations = new Storage("translations.db");
 var maxMessageLength = 64;
+var naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" ).split( ", " );
 var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
 var memTranslations = [];
 var memLimit = 100;
@@ -73,6 +74,17 @@ client.on('chat', (channel, userstate, message, self) => {
       var supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join(", ");
       client.say( channel, "My supported languages are: " + supportedlanguages );
       break;
+    case "!languagecensor":
+    case "!langcensor":
+      channels[ channel ][ "uncensored" ] = !( channels[ channel ][ "uncensored" ] || false );
+      store.put("channels", channels);
+      if( channels[ channel ][ "uncensored" ] ) {
+        client.say( channel, "ChatTranslator will now allow NAUGHTY words." );
+      }
+      else {
+        client.say( channel, "ChatTranslator will now only allow NICE words." );
+      }
+      break;
     case "!languagestop":
     case "!langstop":
       delete channels[ channel ];
@@ -82,7 +94,7 @@ client.on('chat', (channel, userstate, message, self) => {
       break;
     case "!languagecolor":
     case "!langcolor":
-      channels[ channel ][ "color" ] = !( channels[ channel ][ "color" ] || false );
+      channels[ channel ][ "color" ] = !( channels[ channel ][ "color" ] || true );
       store.put("channels", channels);
       client.say( channel, "Chat color was " + ( channels[ channel ][ "color" ] ? "ENABLED" : "DISABLED" ) );
       break;
@@ -114,6 +126,7 @@ client.on('chat', (channel, userstate, message, self) => {
         let langFrom = resp[ language ][ "lang" ];
         if( langFrom && !langFrom.startsWith( language ) ) {
           if (text == message) return; // No need to translate back to itself
+          if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
           client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
         }
         return;
@@ -129,6 +142,7 @@ client.on('chat', (channel, userstate, message, self) => {
             let langFrom = resp[ language ][ "lang" ];
             if( langFrom && !langFrom.startsWith( language ) ) {
               if (text == message) return; // No need to translate back to itself
+              if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
               client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
             }
             return;
@@ -147,6 +161,7 @@ client.on('chat', (channel, userstate, message, self) => {
           let langFrom = resp[ "lang" ];
           if( langFrom && !langFrom.startsWith( language ) ) {
       			if (text == message) return; // No need to translate back to itself
+            if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
       			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
       		}
           if( message.length < maxMessageLength ) {
@@ -171,3 +186,39 @@ client.on('chat', (channel, userstate, message, self) => {
 
 // Finally, connect to the channel
 client.connect();
+
+function naughtyToNice( text ) {
+  var niceText = text;
+  for( var i = 0, len = naughtylist.length; i < len; i++ ) {
+    var badword = naughtylist[ i ];
+    if( text.includes( badword ) ) {
+      if( badword.includes( " " ) ) {
+        var regex = new RegExp( naughtylist[ i ], "g" );
+        niceText = niceText.replace( regex, "[censored]" );
+      }
+      else {
+        var parts = niceText.split( " " );
+        var newText = [];
+        for( var i = 0, len = parts.length; i < len; i++ ) {
+           if( parts[ i ] == badword ) {
+             newText.push( "[censored]" )
+           }
+           else {
+             newText.push( parts[ i ] );
+           }
+        }
+        niceText = newText.join( " " );
+      }
+    }
+  }
+  return niceText;
+}
+
+function containsNaughtyWord( text ) {
+  for( var i = 0, len = naughtylist.length; i < len; i++ ) {
+    if( text.includes( naughtylist[ i ] ) ) {
+      return true;
+    }
+  }
+  return false;
+}
