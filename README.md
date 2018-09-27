@@ -21,6 +21,7 @@ Commands: (Commands are only allowed by the Streamer and Moderators)
 !languagestop / !langstop - Makes the Bot leave the channel
 !languagelist / !langlist - Prints a list of available languages for Translation
 !languagecolor / !langcolor - Toggles the translated text color between normal chat and /me action.
+!languagecensor / !langcensor - Toggles naughty word censorship.
 
 ## Credits ##
 Thank you to all the participants of this project!
