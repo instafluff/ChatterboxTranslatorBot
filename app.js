@@ -5,12 +5,15 @@ var translate = require('google-translate-api');
 var request = require('request');
 var Storage = require('node-storage');
 var store = new Storage("channels.db");
+var translations = new Storage("translations.db");
+var maxMessageLength = 64;
 var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
 
 var channels = store.get("channels") || {};
 var defaultLang = "en";
 var channelList = Object.keys( channels );
 channelList.push( "#" + process.env.TWITCHUSER );
+var translationCalls = 0;
 
 // Setup the client with your configuration; more details here:
 // https://github.com/twitch-apis/twitch-js/blob/master/docs/Chat/Configuration.md
@@ -101,17 +104,37 @@ client.on('chat', (channel, userstate, message, self) => {
       if( word && messageLC.startsWith( word ) ) return;
     }
 
+    if( message.length < maxMessageLength ) {
+      // Attempt to retrieve from cache
+      var resp = translations.get( message ) || undefined;
+      if( resp && resp[ language ] ) {
+        let text = resp[ language ][ "text" ][ 0 ] || "";
+        let langFrom = resp[ language ][ "lang" ];
+        if( langFrom && !langFrom.startsWith( language ) ) {
+          if (text == message) return; // No need to translate back to itself
+          client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
+        }
+        return;
+      }
+    }
+
     request.get("https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" +
 			encodeURI( message ), (err, res, body) => {
+        translationCalls++;
+        console.log( "Translated x" + translationCalls );
         let resp = JSON.parse(body);
         if( resp && resp[ "lang" ] ) {
           let text = resp[ "text" ][ 0 ] || "";
           let langFrom = resp[ "lang" ];
           if( langFrom && !langFrom.startsWith( language ) ) {
       			if (text == message) return; // No need to translate back to itself
-            if( text.split(" ") )
       			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
       		}
+          if( message.length < maxMessageLength ) {
+            var translation = translations.get( message ) || {};
+            translation[ language ] = resp;
+            translations.put( message, translation );
+          }
         }
       });
   }
