@@ -110,7 +110,7 @@ client.on('chat', (channel, userstate, message, self) => {
           if( langFrom && !langFrom.startsWith( language ) ) {
       			if (text == message) return; // No need to translate back to itself
             if( text.split(" ") )
-      			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + " said, \"" + text +"\"" );
+      			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
       		}
         }
       });
