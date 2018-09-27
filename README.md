@@ -31,6 +31,10 @@ And to the participants who helped make this bot a reality!
 
 **Instafluff, sethorizer, MacabreMan2, rarephoenixgames, That_MS_Gamer, Amarogine, Thedudeskee, teemerae, ItsNaomiArt, Kyoslilmonster, Instafriend, nyasaki_de, Meralaz, BillNash, kingswerv, neniltheelf, AntiViGames, Dionysus_Rex, BountyHunterLani, wietlol, therealoliveryoutuber, nightsilas, CrimsonKnightZero, HabuSai, Deitypotato, Atlas_Theta, HuntedThompson, GeoRevilo, HookshotJohn, malfunct, ChatTranslator, MrRayKoma, vic_likadabooty, where_is_laughingman, Mikeystea, sparky_pugwash, CaseyGeske, jellydance, benpoopooface, Neo_TA, Krakka25, Nrwgn_VKNG, DutchGamer46, BungalowGlow, SimmeringSoupPot, MisterHex, tsmilesxd, pikacupcake, MrBoombati, ArtfortheApocalypse, mightygabs, xSAFFIREx, Abbyfabby, cottonsmiles, CptCheerios, Imperialgrrl, pawsitivelystitched, LadyAvianna, AirForceKitty, Shaosan, MollieMcGee, Aleal42, opensource360, FraaOrolo, L33tingL4dy, CriticalKnit, iglookid, KitAnnLIVE, minikatkat, 急須, sebiyy, doombreakers, ThoraxSempai, anonymous__31, ユリシーズ, doyourememberthepickle, GSOcreative, Kara_Kim, Polarami, mallesbixie, Liayda, Khaled__, Inventus1, Teapup, and BongoCat**
 
+and to all the people that helped optimize the bot and add word-filtering for only the nicest words!
+
+**MacabreMan2, Instafriend, Instafluff, wietlol, Neo_TA, That_MS_Gamer, pipskidoodle, jellydance, Kyoslilmonster, Lichsmash, Polarami, InSanityParty, neniltheelf, MrRayKoma, Stay_Hydrated_Bot, MerlinLeWizard, Mikeystea, carbon_add, lizardqueen, ItsNaomiArt, sparky_pugwash, lastleap, vic_likadabooty, BountyHunterLani, blackdawn1980, mrPlus, vPositive, shinageeexpress, GeoRevilo, The_Modern_Alchemist, Sum_Wun, PokemoHero, TheArtofDHT, madridr4, letchik322, FlyToto_, ChatTranslator, flappieh, Kara_Kim, FuriousFur, AgroKragle, Deitypotato, JustRandomGamess, AlexHicks, Gwozilla, Leemyy, QeraiX, BOSSTIEN, CriticalKnit**
+
 ## Instructions ##
 
 1. Install NodeJS - [https://nodejs.org/en/](https://nodejs.org/en/)
