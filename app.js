@@ -121,7 +121,7 @@ client.on('chat', (channel, userstate, message, self) => {
     request.get("https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" +
 			encodeURI( message ), (err, res, body) => {
         translationCalls++;
-        console.log( "Translated x" + translationCalls );
+        // console.log( "Translated x" + translationCalls );
         let resp = JSON.parse(body);
         if( resp && resp[ "lang" ] ) {
           let text = resp[ "text" ][ 0 ] || "";
