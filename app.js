@@ -8,6 +8,8 @@ var store = new Storage("channels.db");
 var translations = new Storage("translations.db");
 var maxMessageLength = 64;
 var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
+var memTranslations = [];
+var memLimit = 100;
 
 var channels = store.get("channels") || {};
 var defaultLang = "en";
@@ -117,6 +119,23 @@ client.on('chat', (channel, userstate, message, self) => {
         return;
       }
     }
+    else {
+      // Check memTranslations for long-message caches
+      for( var i = 0, len = memTranslations.length; i < len && i < memLimit; i++ ) {
+        if( memTranslations[ i ][ "message" ] == message ) {
+          var resp = memTranslations[ i ];
+          if( resp && resp[ language ] ) {
+            let text = resp[ language ][ "text" ][ 0 ] || "";
+            let langFrom = resp[ language ][ "lang" ];
+            if( langFrom && !langFrom.startsWith( language ) ) {
+              if (text == message) return; // No need to translate back to itself
+              client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
+            }
+            return;
+          }
+        }
+      }
+    }
 
     request.get("https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" +
 			encodeURI( message ), (err, res, body) => {
@@ -134,6 +153,16 @@ client.on('chat', (channel, userstate, message, self) => {
             var translation = translations.get( message ) || {};
             translation[ language ] = resp;
             translations.put( message, translation );
+          }
+          else {
+            if( memTranslations.length >= memLimit ) {
+              memTranslations.splice( 0, 1 );
+            }
+            var translation = {
+              "message": message
+            };
+            translation[ language ] = resp;
+            memTranslations.push( translation );
           }
         }
       });
