@@ -10,7 +10,7 @@ var maxMessageLength = 64;
 var naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" ).split( ", " );
 var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
 var memTranslations = [];
-var memLimit = 100;
+var memLimit = 1000;
 
 var channels = store.get("channels") || {};
 var defaultLang = "en";
@@ -112,20 +112,29 @@ client.on('chat', (channel, userstate, message, self) => {
       client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + " said, \"depression.\"" );
       return;
     }
-    var messageLC = message.toLowerCase();
+
+		var emotes = message.split(" ").filter( x => x.match(/^[a-z][a-z\d]*[A-Z][\w\d]*/g) );
+		var filteredMessage = message.split(" ").filter( x => !x.match(/^[a-z][a-z\d]*[A-Z][\w\d]*/g) ).join( " " );
+
+		// Check for an emote-only message
+		if( filteredMessage.length == 0 ) {
+			return;
+		}
+
+    var messageLC = filteredMessage.toLowerCase();
     for( var i = 0, len = globalblacklist.length; i < len; i++ ) {
       var word = globalblacklist[ i ];
       if( word && messageLC.startsWith( word ) ) return;
     }
 
-    if( message.length < maxMessageLength ) {
+    if( filteredMessage.length < maxMessageLength ) {
       // Attempt to retrieve from cache
-      var resp = translations.get( message ) || undefined;
+      var resp = translations.get( filteredMessage ) || undefined;
       if( resp && resp[ language ] ) {
         let text = resp[ language ][ "text" ][ 0 ] || "";
         let langFrom = resp[ language ][ "lang" ];
         if( langFrom && !langFrom.startsWith( language ) ) {
-          if (text == message) return; // No need to translate back to itself
+          if (text == filteredMessage) return; // No need to translate back to itself
           if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
           client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
         }
@@ -135,13 +144,13 @@ client.on('chat', (channel, userstate, message, self) => {
     else {
       // Check memTranslations for long-message caches
       for( var i = 0, len = memTranslations.length; i < len && i < memLimit; i++ ) {
-        if( memTranslations[ i ][ "message" ] == message ) {
+        if( memTranslations[ i ][ "message" ] == filteredMessage ) {
           var resp = memTranslations[ i ];
           if( resp && resp[ language ] ) {
             let text = resp[ language ][ "text" ][ 0 ] || "";
             let langFrom = resp[ language ][ "lang" ];
             if( langFrom && !langFrom.startsWith( language ) ) {
-              if (text == message) return; // No need to translate back to itself
+              if (text == filteredMessage) return; // No need to translate back to itself
               if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
               client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
             }
@@ -152,7 +161,7 @@ client.on('chat', (channel, userstate, message, self) => {
     }
 
     request.get("https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" +
-			encodeURI( message ), (err, res, body) => {
+			encodeURI( filteredMessage ), (err, res, body) => {
         translationCalls++;
         // console.log( "Translated x" + translationCalls );
         let resp = JSON.parse(body);
@@ -160,21 +169,21 @@ client.on('chat', (channel, userstate, message, self) => {
           let text = resp[ "text" ][ 0 ] || "";
           let langFrom = resp[ "lang" ];
           if( langFrom && !langFrom.startsWith( language ) ) {
-      			if (text == message) return; // No need to translate back to itself
+      			if (text == filteredMessage) return; // No need to translate back to itself
             if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
       			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
       		}
-          if( message.length < maxMessageLength ) {
-            var translation = translations.get( message ) || {};
+          if( filteredMessage.length < maxMessageLength ) {
+            var translation = translations.get( filteredMessage ) || {};
             translation[ language ] = resp;
-            translations.put( message, translation );
+            translations.put( filteredMessage, translation );
           }
           else {
             if( memTranslations.length >= memLimit ) {
               memTranslations.splice( 0, 1 );
             }
             var translation = {
-              "message": message
+              "message": filteredMessage
             };
             translation[ language ] = resp;
             memTranslations.push( translation );
