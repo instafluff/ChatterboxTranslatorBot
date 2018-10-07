@@ -164,31 +164,35 @@ client.on('chat', (channel, userstate, message, self) => {
 			encodeURI( filteredMessage ), (err, res, body) => {
         translationCalls++;
         // console.log( "Translated x" + translationCalls );
-        let resp = JSON.parse(body);
-        if( resp && resp[ "lang" ] ) {
-          let text = resp[ "text" ][ 0 ] || "";
-          let langFrom = resp[ "lang" ];
-          if( langFrom && !langFrom.startsWith( language ) ) {
-      			if (text == filteredMessage) return; // No need to translate back to itself
-            if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
-      			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
-      		}
-          if( filteredMessage.length < maxMessageLength ) {
-            var translation = translations.get( filteredMessage ) || {};
-            translation[ language ] = resp;
-            translations.put( filteredMessage, translation );
-          }
-          else {
-            if( memTranslations.length >= memLimit ) {
-              memTranslations.splice( 0, 1 );
-            }
-            var translation = {
-              "message": filteredMessage
-            };
-            translation[ language ] = resp;
-            memTranslations.push( translation );
-          }
-        }
+				try {
+	        let resp = JSON.parse(body);
+	        if( resp && resp[ "lang" ] ) {
+	          let text = resp[ "text" ][ 0 ] || "";
+	          let langFrom = resp[ "lang" ];
+	          if( langFrom && !langFrom.startsWith( language ) ) {
+	      			if (text == filteredMessage) return; // No need to translate back to itself
+	            if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
+	      			client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate["display-name"] + ": " + text );
+	      		}
+	          if( filteredMessage.length < maxMessageLength ) {
+	            var translation = translations.get( filteredMessage ) || {};
+	            translation[ language ] = resp;
+	            translations.put( filteredMessage, translation );
+	          }
+	          else {
+	            if( memTranslations.length >= memLimit ) {
+	              memTranslations.splice( 0, 1 );
+	            }
+	            var translation = {
+	              "message": filteredMessage
+	            };
+	            translation[ language ] = resp;
+	            memTranslations.push( translation );
+	          }
+	        }
+				} catch( e ) {
+					console.log( e );
+				}
       });
   }
 });
