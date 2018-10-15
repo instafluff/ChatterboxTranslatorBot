@@ -15,13 +15,14 @@ Real-time Translation of Twitch Chat
 Description: This bot detects and translates chat messages of other languages into the target language set by the streamer in real-time.
 
 Commands: (Commands are only allowed by the Streamer and Moderators)
-!join - Used only from twitch.tv/ChatTranslator by the streamer to have the bot join the channel
-!languagehelp / !langhelp - Prints out available commands for this Bot
-!language [code] / !lang [code] - Sets the target language for the channel using a language code (e.g. en for English)
-!languagestop / !langstop - Makes the Bot leave the channel
-!languagelist / !langlist - Prints a list of available languages for Translation
-!languagecolor / !langcolor - Toggles the translated text color between normal chat and /me action.
-!languagecensor / !langcensor - Toggles naughty word censorship.
+
+* !join - Used only from twitch.tv/ChatTranslator by the streamer to have the bot join the channel
+* !languagehelp / !langhelp - Prints out available commands for this Bot
+* !language [code] / !lang [code] - Sets the target language for the channel using a language code (e.g. en for English)
+* !languagestop / !langstop - Makes the Bot leave the channel
+* !languagelist / !langlist - Prints a list of available languages for Translation
+* !languagecolor / !langcolor - Toggles the translated text color between normal chat and /me action.
+* !languagecensor / !langcensor - Toggles naughty word censorship.
 
 ## Credits ##
 Thank you to all the participants of this project!
