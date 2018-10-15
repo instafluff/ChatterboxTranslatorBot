@@ -16,7 +16,7 @@ Description: This bot detects and translates chat messages of other languages in
 
 Commands: (Commands are only allowed by the Streamer and Moderators)
 !join - Used only from twitch.tv/ChatTranslator by the streamer to have the bot join the channel
-!languagelist / !langhelp - Prints out available commands for this Bot
+!languagehelp / !langhelp - Prints out available commands for this Bot
 !language [code] / !lang [code] - Sets the target language for the channel using a language code (e.g. en for English)
 !languagestop / !langstop - Makes the Bot leave the channel
 !languagelist / !langlist - Prints a list of available languages for Translation
