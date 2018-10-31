@@ -18,8 +18,6 @@ var channelList = Object.keys( channels );
 channelList.push( "#" + process.env.TWITCHUSER );
 var translationCalls = 0;
 
-// Setup the client with your configuration; more details here:
-// https://github.com/twitch-apis/twitch-js/blob/master/docs/Chat/Configuration.md
 const options = {
   options: {
     debug: false
@@ -28,7 +26,6 @@ const options = {
     reconnect: true,
   },
   channels: channelList,
-  // Provide an identity
   identity: {
     username: process.env.TWITCHUSER,
     password: process.env.OAUTH
@@ -36,8 +33,6 @@ const options = {
 };
 const client = new TwitchJS.client( options );
 
-// Add chat event listener that will respond to "!command" messages with:
-// "Hello world!".
 client.on( 'chat', ( channel, userstate, message, self ) => {
   let isBroadcaster = ( "#" + userstate[ "username" ] ) == channel;
   let isMod = userstate[ "mod" ];
@@ -197,7 +192,6 @@ client.on( 'chat', ( channel, userstate, message, self ) => {
   }
 } );
 
-// Finally, connect to the channel
 client.connect();
 
 function naughtyToNice( text ) {
