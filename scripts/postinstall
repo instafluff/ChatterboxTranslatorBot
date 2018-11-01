@@ -6,6 +6,8 @@ const path = require( 'path' );
 const basePath = __dirname.replace( /\/scripts$/, '' )
 
 addDefaultFiles( 'blacklist.txt', '' )
+addDefaultFiles( 'channels.db', '{}' )
+addDefaultFiles( 'translations.db', '{}' )
 addDefaultFiles( '.env',
 	[
 		'PORT=8000',
