@@ -38,8 +38,9 @@ const isEmoteTest = str => str.match( emoteRegex )
 const isNotEmoteTest = str => !str.match( emoteRegex )
 
 const client = new TwitchJS.client( options );
-
 client.on( 'chat', onMessage );
+client.on( 'connected', ( address, port ) => console.log( `Connected: ${ address }:${ port }` ) );
+client.on( 'reconnect', () => console.log( 'Reconnecting' ) );
 client.connect();
 
 function onMessage( channel, userstate, message, self ) {
