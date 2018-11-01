@@ -4,11 +4,11 @@ const TwitchJS = require( 'twitch-js' );
 const translate = require( 'google-translate-api' );
 const request = require( 'request' );
 const Storage = require( 'node-storage' );
+const { naughtyToNice } = require( './censor' );
 
 const store = new Storage( "channels.db" );
 const translations = new Storage( "translations.db" );
 const maxMessageLength = 64;
-const naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" ).split( ", " );
 const globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
 const memTranslations = [];
 const memLimit = 1000;
@@ -200,40 +200,4 @@ function onMessage( channel, userstate, message, self ) {
         }
       } );
   }
-}
-
-function naughtyToNice( text ) {
-  let niceText = text;
-  for( let i = 0, len = naughtylist.length; i < len; i++ ) {
-    const badword = naughtylist[ i ];
-    if( text.includes( badword ) ) {
-      if( badword.includes( " " ) ) {
-        const regex = new RegExp( naughtylist[ i ], "g" );
-        niceText = niceText.replace( regex, "[censored]" );
-      }
-      else {
-        let parts = niceText.split( " " );
-        let newText = [];
-        for( let i = 0, len = parts.length; i < len; i++ ) {
-          if( parts[ i ] == badword ) {
-            newText.push( "[censored]" )
-          }
-          else {
-            newText.push( parts[ i ] );
-          }
-        }
-        niceText = newText.join( " " );
-      }
-    }
-  }
-  return niceText;
-}
-
-function containsNaughtyWord( text ) {
-  for( let i = 0; i < naughtylist.length; i++ ) {
-    if( text.includes( naughtylist[ i ] ) ) {
-      return true;
-    }
-  }
-  return false;
 }
