@@ -31,9 +31,17 @@ const options = {
     password: process.env.OAUTH
   },
 };
+
+const emoteRegex = /^[a-z][a-z\d]*[A-Z][\w\d]*/g
+const isEmoteTest = str => str.match( emoteRegex )
+const isNotEmoteTest = str => !str.match( emoteRegex )
+
 const client = new TwitchJS.client( options );
 
-client.on( 'chat', ( channel, userstate, message, self ) => {
+client.on( 'chat', onMessage );
+client.connect();
+
+function onMessage( channel, userstate, message, self ) {
   let isBroadcaster = ( "#" + userstate[ "username" ] ) == channel;
   let isMod = userstate[ "mod" ];
   let userChannel = "#" + userstate[ "username" ];
@@ -108,8 +116,8 @@ client.on( 'chat', ( channel, userstate, message, self ) => {
       return;
     }
 
-    var emotes = message.split( " " ).filter( x => x.match( /^[a-z][a-z\d]*[A-Z][\w\d]*/g ) );
-    var filteredMessage = message.split( " " ).filter( x => !x.match( /^[a-z][a-z\d]*[A-Z][\w\d]*/g ) ).join( " " );
+    var emotes = message.split( " " ).filter( isEmoteTest );
+    var filteredMessage = message.split( " " ).filter( isNotEmoteTest ).join( " " );
 
     // Check for an emote-only message
     if( filteredMessage.length == 0 ) {
@@ -190,9 +198,7 @@ client.on( 'chat', ( channel, userstate, message, self ) => {
         }
       } );
   }
-} );
-
-client.connect();
+}
 
 function naughtyToNice( text ) {
   var niceText = text;
