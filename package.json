@@ -4,6 +4,7 @@
   "description": "ChatterboxTranslator as a Twitch Bot!",
   "main": "app.js",
   "scripts": {
+    "postinstall": "node ./scripts/postinstall",
     "start": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
