@@ -113,10 +113,6 @@ function onMessage( channel, userstate, message, self ) {
   if( channels[ channel ] ) {
     let language = channels[ channel ][ "lang" ];
     if( message.startsWith( "!" ) ) return;
-    if( channel === "#instafluff" && message === "hahahahahahaha" ) {
-      client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate[ "display-name" ] + " said, \"depression.\"" );
-      return;
-    }
 
     const emotes = message.split( " " ).filter( isEmoteTest );
     const filteredMessage = message.split( " " ).filter( isNotEmoteTest ).join( " " );
