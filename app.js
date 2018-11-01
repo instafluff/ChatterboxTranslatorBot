@@ -1,22 +1,23 @@
 require( 'dotenv' ).config();
-var fs = require( 'fs' );
-var TwitchJS = require( 'twitch-js' );
-var translate = require( 'google-translate-api' );
-var request = require( 'request' );
-var Storage = require( 'node-storage' );
-var store = new Storage( "channels.db" );
-var translations = new Storage( "translations.db" );
-var maxMessageLength = 64;
-var naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" ).split( ", " );
-var globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
-var memTranslations = [];
-var memLimit = 1000;
+const fs = require( 'fs' );
+const TwitchJS = require( 'twitch-js' );
+const translate = require( 'google-translate-api' );
+const request = require( 'request' );
+const Storage = require( 'node-storage' );
 
-var channels = store.get( "channels" ) || {};
-var defaultLang = "en";
-var channelList = Object.keys( channels );
+const store = new Storage( "channels.db" );
+const translations = new Storage( "translations.db" );
+const maxMessageLength = 64;
+const naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" ).split( ", " );
+const globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
+const memTranslations = [];
+const memLimit = 1000;
+
+const channels = store.get( "channels" ) || {};
+const defaultLang = "en";
+const channelList = Object.keys( channels );
 channelList.push( "#" + process.env.TWITCHUSER );
-var translationCalls = 0;
+let translationCalls = 0;
 
 const options = {
   options: {
@@ -64,7 +65,7 @@ function onMessage( channel, userstate, message, self ) {
 
   if( isBroadcaster || isMod ) {
     if( message.startsWith( "!lang " ) || message.startsWith( "!language " ) ) {
-      var targetLanguage = message.split( " " )[ 1 ].trim();
+      const targetLanguage = message.split( " " )[ 1 ].trim();
       if( translate.languages.isSupported( targetLanguage ) ) {
         channels[ channel ][ "lang" ] = translate.languages.getCode( targetLanguage );
         client.say( channel, "/me Language was set to " + translate.languages[ channels[ channel ][ "lang" ] ] );
@@ -74,7 +75,7 @@ function onMessage( channel, userstate, message, self ) {
     switch( message ) {
       case "!languagelist":
       case "!langlist":
-        var supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
+        const supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
         client.say( channel, "My supported languages are: " + supportedlanguages );
         break;
       case "!languagecensor":
@@ -116,23 +117,23 @@ function onMessage( channel, userstate, message, self ) {
       return;
     }
 
-    var emotes = message.split( " " ).filter( isEmoteTest );
-    var filteredMessage = message.split( " " ).filter( isNotEmoteTest ).join( " " );
+    const emotes = message.split( " " ).filter( isEmoteTest );
+    const filteredMessage = message.split( " " ).filter( isNotEmoteTest ).join( " " );
 
     // Check for an emote-only message
     if( filteredMessage.length == 0 ) {
       return;
     }
 
-    var messageLC = filteredMessage.toLowerCase();
-    for( var i = 0, len = globalblacklist.length; i < len; i++ ) {
-      var word = globalblacklist[ i ];
+    const messageLC = filteredMessage.toLowerCase();
+    for( let i = 0; i < globalblacklist.length; i++ ) {
+      const word = globalblacklist[ i ];
       if( word && messageLC.startsWith( word ) ) return;
     }
 
     if( filteredMessage.length < maxMessageLength ) {
       // Attempt to retrieve from cache
-      var resp = translations.get( filteredMessage ) || undefined;
+      const resp = translations.get( filteredMessage ) || undefined;
       if( resp && resp[ language ] ) {
         let text = resp[ language ][ "text" ][ 0 ] || "";
         let langFrom = resp[ language ][ "lang" ];
@@ -146,9 +147,9 @@ function onMessage( channel, userstate, message, self ) {
     }
     else {
       // Check memTranslations for long-message caches
-      for( var i = 0, len = memTranslations.length; i < len && i < memLimit; i++ ) {
+      for( let i = 0; i < memTranslations.length && i < memLimit; i++ ) {
         if( memTranslations[ i ][ "message" ] == filteredMessage ) {
-          var resp = memTranslations[ i ];
+          const resp = memTranslations[ i ];
           if( resp && resp[ language ] ) {
             let text = resp[ language ][ "text" ][ 0 ] || "";
             let langFrom = resp[ language ][ "lang" ];
@@ -168,7 +169,7 @@ function onMessage( channel, userstate, message, self ) {
         translationCalls++;
         // console.log( "Translated x" + translationCalls );
         try {
-          let resp = JSON.parse( body );
+          const resp = JSON.parse( body );
           if( resp && resp[ "lang" ] ) {
             let text = resp[ "text" ][ 0 ] || "";
             let langFrom = resp[ "lang" ];
@@ -178,7 +179,7 @@ function onMessage( channel, userstate, message, self ) {
               client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
             }
             if( filteredMessage.length < maxMessageLength ) {
-              var translation = translations.get( filteredMessage ) || {};
+              const translation = translations.get( filteredMessage ) || {};
               translation[ language ] = resp;
               translations.put( filteredMessage, translation );
             }
@@ -186,7 +187,7 @@ function onMessage( channel, userstate, message, self ) {
               if( memTranslations.length >= memLimit ) {
                 memTranslations.splice( 0, 1 );
               }
-              var translation = {
+              const translation = {
                 "message": filteredMessage
               };
               translation[ language ] = resp;
@@ -201,18 +202,18 @@ function onMessage( channel, userstate, message, self ) {
 }
 
 function naughtyToNice( text ) {
-  var niceText = text;
-  for( var i = 0, len = naughtylist.length; i < len; i++ ) {
-    var badword = naughtylist[ i ];
+  let niceText = text;
+  for( let i = 0, len = naughtylist.length; i < len; i++ ) {
+    const badword = naughtylist[ i ];
     if( text.includes( badword ) ) {
       if( badword.includes( " " ) ) {
-        var regex = new RegExp( naughtylist[ i ], "g" );
+        const regex = new RegExp( naughtylist[ i ], "g" );
         niceText = niceText.replace( regex, "[censored]" );
       }
       else {
-        var parts = niceText.split( " " );
-        var newText = [];
-        for( var i = 0, len = parts.length; i < len; i++ ) {
+        let parts = niceText.split( " " );
+        let newText = [];
+        for( let i = 0, len = parts.length; i < len; i++ ) {
           if( parts[ i ] == badword ) {
             newText.push( "[censored]" )
           }
@@ -228,7 +229,7 @@ function naughtyToNice( text ) {
 }
 
 function containsNaughtyWord( text ) {
-  for( var i = 0, len = naughtylist.length; i < len; i++ ) {
+  for( let i = 0; i < naughtylist.length; i++ ) {
     if( text.includes( naughtylist[ i ] ) ) {
       return true;
     }
