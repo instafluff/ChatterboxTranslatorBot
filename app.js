@@ -15,11 +15,18 @@ const memLimit = 1000;
 
 const channels = store.get( "channels" ) || {};
 const defaultLang = "en";
+const botChannelName = "#" + process.env.TWITCHUSER;
 const channelList = Object.keys( channels );
-channelList.push( "#" + process.env.TWITCHUSER );
+channelList.push( botChannelName );
+const prefix = '!'
+const prefixRegex = new RegExp( '^' + prefix )
 let translationCalls = 0;
 
-const options = {
+const emoteRegex = /^[a-z][a-z\d]*[A-Z][\w\d]*/g
+const isEmoteTest = str => str.match( emoteRegex )
+const isNotEmoteTest = str => !str.match( emoteRegex )
+
+const client = new TwitchJS.client( {
   options: {
     debug: false
   },
@@ -31,88 +38,83 @@ const options = {
     username: process.env.TWITCHUSER,
     password: process.env.OAUTH
   },
-};
-
-const emoteRegex = /^[a-z][a-z\d]*[A-Z][\w\d]*/g
-const isEmoteTest = str => str.match( emoteRegex )
-const isNotEmoteTest = str => !str.match( emoteRegex )
-
-const client = new TwitchJS.client( options );
+} );
 client.on( 'chat', onMessage );
 client.on( 'connected', ( address, port ) => console.log( `Connected: ${ address }:${ port }` ) );
 client.on( 'reconnect', () => console.log( 'Reconnecting' ) );
 client.connect();
 
 function onMessage( channel, userstate, message, self ) {
-  let isBroadcaster = ( "#" + userstate[ "username" ] ) == channel;
-  let isMod = userstate[ "mod" ];
-  let userChannel = "#" + userstate[ "username" ];
   if( self ) return;
 
-  if( channel == "#" + process.env.TWITCHUSER ) {
-    switch( message ) {
-      case "!join":
+  const userChannel = "#" + userstate.username;
+  const isBroadcaster = userChannel == channel;
+  const isMod = userstate.mod;
+  const channelConfig = channels[ channel ]
+
+  // Join request in home channel
+  if( channel == botChannelName ) {
+    switch( message.replace( prefixRegex, '' ).toLowerCase() ) {
+      case "join":
         if( !channels[ userChannel ] ) {
           client.join( userChannel ).then( ( data ) => {
-            channels[ data ] = { "lang": defaultLang };
+            channels[ data ] = { lang: defaultLang };
             store.put( "channels", channels );
             client.say( userChannel, "/me Hello! I am ready to translate" );
           } );
           client.say( channel, "/me Okay, " + userstate[ "display-name" ] );
         }
-        break;
+        return;
     }
   }
 
+  // Bot managment
   if( isBroadcaster || isMod ) {
     if( message.startsWith( "!lang " ) || message.startsWith( "!language " ) ) {
       const targetLanguage = message.split( " " )[ 1 ].trim();
       if( translate.languages.isSupported( targetLanguage ) ) {
-        channels[ channel ][ "lang" ] = translate.languages.getCode( targetLanguage );
-        client.say( channel, "/me Language was set to " + translate.languages[ channels[ channel ][ "lang" ] ] );
+        channelConfig.lang = translate.languages.getCode( targetLanguage );
+        client.say( channel, "/me Language was set to " + translate.languages[ channelConfig.lang ] );
       }
       return;
     }
-    switch( message ) {
-      case "!languagelist":
-      case "!langlist":
+    switch( message.replace( prefixRegex, '' ).toLowerCase() ) {
+      case "languagelist":
+      case "langlist":
         const supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
-        client.say( channel, "My supported languages are: " + supportedlanguages );
-        break;
-      case "!languagecensor":
-      case "!langcensor":
-        channels[ channel ][ "uncensored" ] = !( channels[ channel ][ "uncensored" ] || false );
+        return client.say( channel, "My supported languages are: " + supportedlanguages );
+      case "languagecensor":
+      case "langcensor":
+        channelConfig.uncensored = !channelConfig.uncensored;
         store.put( "channels", channels );
-        if( channels[ channel ][ "uncensored" ] ) {
-          client.say( channel, "ChatTranslator will now allow NAUGHTY words." );
-        }
-        else {
-          client.say( channel, "ChatTranslator will now only allow NICE words." );
-        }
-        break;
-      case "!languagestop":
-      case "!langstop":
+        return client.say( channel,
+          channelConfig.uncensored
+            ? "ChatTranslator will now allow NAUGHTY words."
+            : "ChatTranslator will now only allow NICE words."
+        );
+      case "languagestop":
+      case "langstop":
         delete channels[ channel ];
         store.put( "channels", channels );
         client.say( channel, "Goodbye!!!" );
-        client.part( channel );
-        break;
-      case "!languagecolor":
-      case "!langcolor":
-        channels[ channel ][ "color" ] = !( channels[ channel ][ "color" ] || true );
+        return client.part( channel );
+      case "languagecolor":
+      case "langcolor":
+        channelConfig.color = !( channelConfig.color || true );
         store.put( "channels", channels );
-        client.say( channel, "Chat color was " + ( channels[ channel ][ "color" ] ? "ENABLED" : "DISABLED" ) );
-        break;
-      case "!languagehelp":
-      case "!langhelp":
-        client.say( channel, "My commands are !lang [language], !langlist, !langcolor, !langstop" );
-        break;
+        return client.say( channel, "Chat color was " + ( channelConfig.color ? "ENABLED" : "DISABLED" ) );
+      case "languagehelp":
+      case "langhelp":
+        return client.say( channel, "My commands are !lang [language], !langlist, !langcolor, !langstop" );
     }
   }
 
-  if( channels[ channel ] ) {
-    let language = channels[ channel ][ "lang" ];
-    if( message.startsWith( "!" ) ) return;
+  // Translation block
+  if( channelConfig ) {
+    let language = channelConfig.lang;
+    if( message.match( prefixRegex ) ) {
+      return;
+    }
 
     const emotes = message.split( " " ).filter( isEmoteTest );
     const filteredMessage = message.split( " " ).filter( isNotEmoteTest ).join( " " );
@@ -122,22 +124,27 @@ function onMessage( channel, userstate, message, self ) {
       return;
     }
 
+    // Blacklist filtering
     const messageLC = filteredMessage.toLowerCase();
     for( let i = 0; i < globalblacklist.length; i++ ) {
       const word = globalblacklist[ i ];
-      if( word && messageLC.startsWith( word ) ) return;
+      if( word && messageLC.startsWith( word ) ) {
+        return;
+      }
     }
 
+
+    // Caching
     if( filteredMessage.length < maxMessageLength ) {
       // Attempt to retrieve from cache
       const resp = translations.get( filteredMessage ) || undefined;
       if( resp && resp[ language ] ) {
-        let text = resp[ language ][ "text" ][ 0 ] || "";
-        let langFrom = resp[ language ][ "lang" ];
+        let text = resp[ language ].text[ 0 ] || "";
+        let langFrom = resp[ language ].lang;
         if( langFrom && !langFrom.startsWith( language ) ) {
           if( text == filteredMessage ) return; // No need to translate back to itself
-          if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
-          client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
+          if( !channelConfig.uncensored ) text = naughtyToNice( text );
+          client.say( channel, ( channelConfig.color ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
         }
         return;
       }
@@ -145,15 +152,17 @@ function onMessage( channel, userstate, message, self ) {
     else {
       // Check memTranslations for long-message caches
       for( let i = 0; i < memTranslations.length && i < memLimit; i++ ) {
-        if( memTranslations[ i ][ "message" ] == filteredMessage ) {
+        if( memTranslations[ i ].message == filteredMessage ) {
           const resp = memTranslations[ i ];
           if( resp && resp[ language ] ) {
-            let text = resp[ language ][ "text" ][ 0 ] || "";
-            let langFrom = resp[ language ][ "lang" ];
+            let text = resp[ language ].text[ 0 ] || "";
+            let langFrom = resp[ language ].lang;
             if( langFrom && !langFrom.startsWith( language ) ) {
-              if( text == filteredMessage ) return; // No need to translate back to itself
-              if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
-              client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
+              // No need to send duplicate in same language
+              if( text == filteredMessage ) return;
+              // Censoring
+              if( !channelConfig.uncensored ) text = naughtyToNice( text );
+              client.say( channel, ( channelConfig.color ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
             }
             return;
           }
@@ -161,20 +170,29 @@ function onMessage( channel, userstate, message, self ) {
       }
     }
 
-    request.get( "https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" +
-      encodeURI( filteredMessage ), ( err, res, body ) => {
+    // Get Translation from yandex
+    request.get(
+      "https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" + encodeURI( filteredMessage ),
+      ( err, res, body ) => {
         translationCalls++;
-        // console.log( "Translated x" + translationCalls );
+        if( translationCalls % 50 === 0 ) console.log( "API calls" + translationCalls );
+        // Error handling
+        if( err ) {
+          return console.log( "Error in translation request", err );
+        }
         try {
           const resp = JSON.parse( body );
-          if( resp && resp[ "lang" ] ) {
-            let text = resp[ "text" ][ 0 ] || "";
-            let langFrom = resp[ "lang" ];
+          if( resp && resp.lang ) {
+            let text = resp.text[ 0 ] || "";
+            let langFrom = resp.lang;
             if( langFrom && !langFrom.startsWith( language ) ) {
-              if( text == filteredMessage ) return; // No need to translate back to itself
-              if( !channels[ channel ][ "uncensored" ] ) text = naughtyToNice( text );
-              client.say( channel, ( channels[ channel ][ "color" ] ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
+              // No need to send duplicate in same language
+              if( text == filteredMessage ) return;
+              // Censoring
+              if( !channelConfig.uncensored ) text = naughtyToNice( text );
+              client.say( channel, `${ channelConfig.color ? "/me " : "" }${ userstate[ "display-name" ] }: ${ text }` );
             }
+            // Cache translation
             if( filteredMessage.length < maxMessageLength ) {
               const translation = translations.get( filteredMessage ) || {};
               translation[ language ] = resp;
@@ -184,11 +202,10 @@ function onMessage( channel, userstate, message, self ) {
               if( memTranslations.length >= memLimit ) {
                 memTranslations.splice( 0, 1 );
               }
-              const translation = {
-                "message": filteredMessage
-              };
-              translation[ language ] = resp;
-              memTranslations.push( translation );
+              memTranslations.push( {
+                message: filteredMessage,
+                [ language ]: resp
+              } );
             }
           }
         } catch( e ) {
