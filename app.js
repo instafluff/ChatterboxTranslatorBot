@@ -4,12 +4,11 @@ const TwitchJS = require( 'twitch-js' );
 const translate = require( 'google-translate-api' );
 const request = require( 'request' );
 const Storage = require( 'node-storage' );
-const { naughtyToNice } = require( './censor' );
+const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
 
 const store = new Storage( "channels.db" );
 const translations = new Storage( "translations.db" );
 const maxMessageLength = 64;
-const globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" );
 const memTranslations = [];
 const memLimit = 1000;
 
@@ -125,13 +124,7 @@ function onMessage( channel, userstate, message, self ) {
     }
 
     // Blacklist filtering
-    const messageLC = filteredMessage.toLowerCase();
-    for( let i = 0; i < globalblacklist.length; i++ ) {
-      const word = globalblacklist[ i ];
-      if( word && messageLC.startsWith( word ) ) {
-        return;
-      }
-    }
+    if( hasBlacklistedWord( message ) ) return;
 
 
     // Caching

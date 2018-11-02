@@ -4,11 +4,15 @@ const naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-te
 
 const naughtyRegexList = naughtylist
   .map( word => new RegExp( `\\b${ word }\\b`, "gi" ) )
+const globalblacklist = fs.readFileSync( "blacklist.txt", "utf8" ).split( "\n" )
+  .filter( Boolean )
+  .map( word => new RegExp( `\\b${ word }\\b`, "gi" ) );
 const CENSORED = "[censored]"
 
 module.exports = {
   naughtyToNice,
-  containsNaughtyWord
+  containsNaughtyWord,
+  hasBlacklistedWord
 }
 
 function naughtyToNice( text ) {
@@ -25,4 +29,8 @@ function containsNaughtyWord( text ) {
     }
   }
   return false;
+}
+
+function hasBlacklistedWord( string ) {
+  return globalblacklist.some( regex => regex.test( string ) )
 }
