@@ -1,39 +1,21 @@
 const fs = require( 'fs' );
-const naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" ).split( ", " );
+const naughtylist = fs.readFileSync( "facebook-bad-words-list_comma-separated-text-file_2018_07_29.txt", "utf8" )
+  .split( ", " ).filter( Boolean );
+
+const naughtyRegexList = naughtylist
+  .map( word => new RegExp( `\\b${ word }\\b`, "gi" ) )
+const CENSORED = "[censored]"
 
 module.exports = {
   naughtyToNice,
   containsNaughtyWord
 }
 
-const CENSORED = "[censored]"
-
 function naughtyToNice( text ) {
-  let niceText = text;
-  for( var i = 0; i < naughtylist.length; i++ ) {
-
-    const badword = naughtylist[ i ];
-    if( text.includes( badword ) ) {
-      if( badword.includes( " " ) ) {
-        const regex = new RegExp( naughtylist[ i ], "g" );
-        niceText = niceText.replace( regex, CENSORED );
-      }
-      else {
-        let parts = niceText.split( " " );
-        let newText = [];
-        for( var j = 0; j < parts.length; j++ ) {
-          if( parts[ j ] == badword ) {
-            newText.push( CENSORED )
-          }
-          else {
-            newText.push( parts[ j ] );
-          }
-        }
-        niceText = newText.join( " " );
-      }
-    }
-  }
-  return niceText;
+  return naughtyRegexList.reduce(
+    ( string, regex ) => string.replace( regex, CENSORED ),
+    text
+  )
 }
 
 function containsNaughtyWord( text ) {
