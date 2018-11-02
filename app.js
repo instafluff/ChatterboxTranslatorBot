@@ -5,6 +5,7 @@ const translate = require( 'google-translate-api' );
 const request = require( 'request' );
 const Storage = require( 'node-storage' );
 const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
+const { parseEmotes } = require( './emotes' );
 
 const store = new Storage( "channels.db" );
 const translations = new Storage( "translations.db" );
@@ -20,10 +21,6 @@ channelList.push( botChannelName );
 const prefix = '!'
 const prefixRegex = new RegExp( '^' + prefix )
 let translationCalls = 0;
-
-const emoteRegex = /^[a-z][a-z\d]*[A-Z][\w\d]*/g
-const isEmoteTest = str => str.match( emoteRegex )
-const isNotEmoteTest = str => !str.match( emoteRegex )
 
 const client = new TwitchJS.client( {
   options: {
@@ -115,17 +112,16 @@ function onMessage( channel, userstate, message, self ) {
       return;
     }
 
-    const emotes = message.split( " " ).filter( isEmoteTest );
-    const filteredMessage = message.split( " " ).filter( isNotEmoteTest ).join( " " );
-
-    // Check for an emote-only message
-    if( filteredMessage.length == 0 ) {
-      return;
-    }
-
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
 
+    // Parsing for emotes
+    let filteredMessage = message
+    if( userstate.emotes ) {
+      filteredMessage = parseEmotes( userstate.emotes, filteredMessage );
+    }
+
+    if( !filteredMessage ) return;
 
     // Caching
     if( filteredMessage.length < maxMessageLength ) {
