@@ -138,36 +138,13 @@ function onMessage( channel, userstate, message, self ) {
     if( filteredMessage.length < maxMessageLength ) {
       // Attempt to retrieve from cache
       const resp = translations.get( filteredMessage ) || undefined;
-      if( resp && resp[ language ] ) {
-        let text = resp[ language ].text[ 0 ] || "";
-        let langFrom = resp[ language ].lang;
-        if( langFrom && !langFrom.startsWith( language ) ) {
-          if( text == filteredMessage ) return; // No need to translate back to itself
-          if( !channelConfig.uncensored ) text = naughtyToNice( text );
-          client.say( channel, ( channelConfig.color ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
-        }
-        return;
-      }
-    }
-    else {
+      if( resp && resp[ language ] )
+        return sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp )
+    } else {
       // Check memTranslations for long-message caches
-      for( let i = 0; i < memTranslations.length && i < memLimit; i++ ) {
-        if( memTranslations[ i ].message == filteredMessage ) {
-          const resp = memTranslations[ i ];
-          if( resp && resp[ language ] ) {
-            let text = resp[ language ].text[ 0 ] || "";
-            let langFrom = resp[ language ].lang;
-            if( langFrom && !langFrom.startsWith( language ) ) {
-              // No need to send duplicate in same language
-              if( text == filteredMessage ) return;
-              // Censoring
-              if( !channelConfig.uncensored ) text = naughtyToNice( text );
-              client.say( channel, ( channelConfig.color ? "/me " : "" ) + userstate[ "display-name" ] + ": " + text );
-            }
-            return;
-          }
-        }
-      }
+      const resp = memTranslations.find( translation => translation.message == filteredMessage )
+      if( resp && resp[ language ] )
+        return sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp )
     }
 
     // Get Translation from yandex
@@ -183,15 +160,7 @@ function onMessage( channel, userstate, message, self ) {
         try {
           const resp = JSON.parse( body );
           if( resp && resp.lang ) {
-            let text = resp.text[ 0 ] || "";
-            let langFrom = resp.lang;
-            if( langFrom && !langFrom.startsWith( language ) ) {
-              // No need to send duplicate in same language
-              if( text == filteredMessage ) return;
-              // Censoring
-              if( !channelConfig.uncensored ) text = naughtyToNice( text );
-              client.say( channel, `${ channelConfig.color ? "/me " : "" }${ userstate[ "display-name" ] }: ${ text }` );
-            }
+            sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp, true );
             // Cache translation
             if( filteredMessage.length < maxMessageLength ) {
               const translation = translations.get( filteredMessage ) || {};
@@ -213,4 +182,28 @@ function onMessage( channel, userstate, message, self ) {
         }
       } );
   }
+}
+
+function sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp, fromRequest = false ) {
+  let text, langFrom;
+  if( fromRequest ) {
+    text = resp.text[ 0 ] || "";
+    langFrom = resp.lang;
+  } else {
+    text = resp[ language ].text[ 0 ] || "";
+    langFrom = resp[ language ].lang;
+  }
+
+  if( !langFrom || langFrom.startsWith( language ) ) return
+
+  // No need to send duplicate in same language
+  if( text == filteredMessage ) {
+    return;
+  }
+  // Censoring
+  if( !channelConfig.uncensored ) {
+    text = naughtyToNice( text );
+  }
+
+  client.say( channel, `${ channelConfig.color ? "/me " : "" }${ userstate[ "display-name" ] }: ${ text }` );
 }
