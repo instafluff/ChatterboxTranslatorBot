@@ -43,14 +43,23 @@ client.connect();
 function onMessage( channel, userstate, message, self ) {
   if( self ) return;
 
+  if( message.match( prefixRegex ) ) {
+    runCommand( channel, userstate, message )
+  } else if( channels[ channel ] ) {
+    translateMessage( channel, userstate, message )
+  }
+}
+
+function runCommand( channel, userstate, message ) {
   const userChannel = "#" + userstate.username;
   const isBroadcaster = userChannel == channel;
   const isMod = userstate.mod;
   const channelConfig = channels[ channel ]
+  const command = message.replace( prefixRegex, '' ).toLowerCase()
 
   // Join request in home channel
   if( channel == botChannelName ) {
-    switch( message.replace( prefixRegex, '' ).toLowerCase() ) {
+    switch( command ) {
       case "join":
         if( !channels[ userChannel ] ) {
           client.join( userChannel ).then( ( data ) => {
@@ -74,7 +83,7 @@ function onMessage( channel, userstate, message, self ) {
       }
       return;
     }
-    switch( message.replace( prefixRegex, '' ).toLowerCase() ) {
+    switch( command ) {
       case "languagelist":
       case "langlist":
         const supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
@@ -104,13 +113,11 @@ function onMessage( channel, userstate, message, self ) {
         return client.say( channel, "My commands are !lang [language], !langlist, !langcolor, !langstop" );
     }
   }
+}
 
-  // Translation block
-  if( channelConfig ) {
-    let language = channelConfig.lang;
-    if( message.match( prefixRegex ) ) {
-      return;
-    }
+function translateMessage( channel, userstate, message ) {
+  {
+    const language = channels[ channel ].lang;
 
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
@@ -128,12 +135,12 @@ function onMessage( channel, userstate, message, self ) {
       // Attempt to retrieve from cache
       const resp = translations.get( filteredMessage ) || undefined;
       if( resp && resp[ language ] )
-        return sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp )
     } else {
       // Check memTranslations for long-message caches
       const resp = memTranslations.find( translation => translation.message == filteredMessage )
       if( resp && resp[ language ] )
-        return sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp )
     }
 
     // Get Translation from yandex
@@ -149,7 +156,7 @@ function onMessage( channel, userstate, message, self ) {
         try {
           const resp = JSON.parse( body );
           if( resp && resp.lang ) {
-            sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp, true );
+            sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, true );
             // Cache translation
             if( filteredMessage.length < maxMessageLength ) {
               const translation = translations.get( filteredMessage ) || {};
@@ -173,8 +180,10 @@ function onMessage( channel, userstate, message, self ) {
   }
 }
 
-function sendTranslationFromResponse( language, filteredMessage, channelConfig, channel, userstate, resp, fromRequest = false ) {
+function sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, fromRequest = false ) {
+  const { uncensored, color } = channels[ channel ]
   let text, langFrom;
+
   if( fromRequest ) {
     text = resp.text[ 0 ] || "";
     langFrom = resp.lang;
@@ -190,9 +199,9 @@ function sendTranslationFromResponse( language, filteredMessage, channelConfig, 
     return;
   }
   // Censoring
-  if( !channelConfig.uncensored ) {
+  if( !uncensored ) {
     text = naughtyToNice( text );
   }
 
-  client.say( channel, `${ channelConfig.color ? "/me " : "" }${ userstate[ "display-name" ] }: ${ text }` );
+  client.say( channel, `${ color ? "/me " : "" }${ userstate[ "display-name" ] }: ${ text }` );
 }
