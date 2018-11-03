@@ -6,7 +6,10 @@
   "scripts": {
     "postinstall": "node ./scripts/postinstall",
     "start": "node .",
-    "test": "ava"
+    "dev": "nodemon .",
+    "test": "nyc ava",
+    "test:lcov": "nyc report --reporter=lcov ava test/**/*.js",
+    "test:dev": "ava -w"
   },
   "repository": {
     "type": "git",
@@ -28,6 +31,9 @@
     "twitch-js": "^1.2.14"
   },
   "devDependencies": {
-    "ava": "^0.25.0"
+    "ava": "^0.25.0",
+    "nodemon": "^1.18.5",
+    "nyc": "^13.1.0",
+    "sinon": "^7.1.1"
   }
 }
