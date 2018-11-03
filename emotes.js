@@ -2,7 +2,7 @@ module.exports = {
   parseEmotes,
 }
 
-const whitespaceRegex = /\s+/g
+const whitespaceRegex = module.exports.whitespaceRegex = /\s+/g
 const doubleColonRegex = /:(\w|-|\+)+:/g
 const emoteRegexMap = new Map()
 

@@ -20,6 +20,7 @@ const channelList = Object.keys( channels );
 channelList.push( botChannelName );
 const prefix = '!'
 const prefixRegex = new RegExp( '^' + prefix )
+const twitchUsernameRegex = /@[a-zA-Z0-9_]{4,25}\b/gi
 let translationCalls = 0;
 
 const client = new TwitchJS.client( {
@@ -123,7 +124,7 @@ function translateMessage( channel, userstate, message ) {
     if( hasBlacklistedWord( message ) ) return;
 
     // Parsing for emotes
-    let filteredMessage = message
+    let filteredMessage = message.replace( twitchUsernameRegex, '' ).replace( whitespaceRegex, ' ' )
     if( userstate.emotes ) {
       filteredMessage = parseEmotes( userstate.emotes, filteredMessage );
     }
