@@ -4,8 +4,12 @@
   "description": "ChatterboxTranslator as a Twitch Bot!",
   "main": "app.js",
   "scripts": {
+    "postinstall": "node ./scripts/postinstall",
     "start": "node .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon .",
+    "test": "nyc ava",
+    "test:lcov": "nyc report --reporter=lcov ava test/**/*.js",
+    "test:dev": "ava -w"
   },
   "repository": {
     "type": "git",
@@ -19,10 +23,17 @@
   "homepage": "https://github.com/instafluff/DinoPoints#readme",
   "dependencies": {
     "dotenv": "^6.0.0",
+    "emoji-regex": "^7.0.1",
     "google-translate-api": "^2.3.0",
     "node-storage": "0.0.7",
     "nosql": "^6.1.0",
     "request": "^2.88.0",
     "twitch-js": "^1.2.14"
+  },
+  "devDependencies": {
+    "ava": "^0.25.0",
+    "nodemon": "^1.18.5",
+    "nyc": "^13.1.0",
+    "sinon": "^7.1.1"
   }
 }
