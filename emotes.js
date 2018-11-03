@@ -1,3 +1,5 @@
+const emoji = require( 'emoji-regex' );
+
 module.exports = {
   parseEmotes,
 }
@@ -24,6 +26,7 @@ function parseEmotes( emotes, message ) {
   }
 
   parsed = parsed.replace( doubleColonRegex, '' )
+  parsed = parsed.replace( emoji, '' )
   parsed = parsed.trim().replace( whitespaceRegex, ' ' );
   return parsed
 }

@@ -20,6 +20,7 @@
   "homepage": "https://github.com/instafluff/DinoPoints#readme",
   "dependencies": {
     "dotenv": "^6.0.0",
+    "emoji-regex": "^7.0.1",
     "google-translate-api": "^2.3.0",
     "node-storage": "0.0.7",
     "nosql": "^6.1.0",
