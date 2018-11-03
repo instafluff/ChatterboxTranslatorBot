@@ -41,18 +41,22 @@ client.on( 'connected', ( address, port ) => console.log( `Connected: ${ address
 client.on( 'reconnect', () => console.log( 'Reconnecting' ) );
 client.connect();
 
+const appInjection = { client, prefixRegex, botChannelName, store, translations, request }
+
 function onMessage( channel, userstate, message, self ) {
   if( self ) return;
 
   if( message.match( prefixRegex ) ) {
-    runCommand( channel, userstate, message )
+    runCommand( channel, userstate, message, appInjection )
   } else if( channels[ channel ] ) {
-    translateMessage( channel, userstate, message )
+    translateMessage( channel, userstate, message, appInjection )
   }
 }
 
-function runCommand( channel, userstate, message ) {
+function runCommand( channel, userstate, message, app ) {
+  const { client, prefixRegex, botChannelName, store } = app
   const userChannel = "#" + userstate.username;
+  const display = userstate[ 'display-name' ];
   const isBroadcaster = userChannel == channel;
   const isMod = userstate.mod;
   const channelConfig = channels[ channel ]
@@ -68,7 +72,7 @@ function runCommand( channel, userstate, message ) {
             store.put( "channels", channels );
             client.say( userChannel, "/me Hello! I am ready to translate" );
           } );
-          client.say( channel, "/me Okay, " + userstate[ "display-name" ] );
+          client.say( channel, "/me Okay, " + display );
         }
         return;
     }
@@ -116,8 +120,9 @@ function runCommand( channel, userstate, message ) {
   }
 }
 
-function translateMessage( channel, userstate, message ) {
+function translateMessage( channel, userstate, message, app ) {
   {
+    const { translations, request } = app
     const language = channels[ channel ].lang;
 
     // Blacklist filtering
@@ -136,12 +141,12 @@ function translateMessage( channel, userstate, message ) {
       // Attempt to retrieve from cache
       const resp = translations.get( filteredMessage ) || undefined;
       if( resp && resp[ language ] )
-        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
     } else {
       // Check memTranslations for long-message caches
       const resp = memTranslations.find( translation => translation.message == filteredMessage )
       if( resp && resp[ language ] )
-        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
     }
 
     // Get Translation from yandex
@@ -157,7 +162,7 @@ function translateMessage( channel, userstate, message ) {
         try {
           const resp = JSON.parse( body );
           if( resp && resp.lang ) {
-            sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, true );
+            sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, true );
             // Cache translation
             if( filteredMessage.length < maxMessageLength ) {
               const translation = translations.get( filteredMessage ) || {};
@@ -181,7 +186,8 @@ function translateMessage( channel, userstate, message ) {
   }
 }
 
-function sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, fromRequest = false ) {
+function sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, fromRequest = false ) {
+  const { client } = app
   const { uncensored, color } = channels[ channel ]
   let text, langFrom;
 
