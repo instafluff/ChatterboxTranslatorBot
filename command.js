@@ -3,28 +3,40 @@ const defaultLang = "en";
 
 function runCommand( channel, userstate, message, app ) {
   const { client, prefixRegex, botChannelName, channels, store } = app
-  const userChannel = "#" + userstate.username;
-  const display = userstate[ 'display-name' ];
-  const isBroadcaster = userChannel == channel;
-  const isMod = userstate.mod;
-  const channelConfig = channels[ channel ]
+  const { username } = userstate
   const command = message.replace( prefixRegex, '' ).toLowerCase()
+  const userChannel = "#" + userstate.username;
 
   // Join request in home channel
   if( channel == botChannelName ) {
     switch( command ) {
       case "join":
         if( !channels[ userChannel ] ) {
-          client.join( userChannel ).then( ( data ) => {
-            channels[ data ] = { lang: defaultLang };
-            store.put( "channels", channels );
-            client.say( userChannel, "/me Hello! I am ready to translate" );
-          } );
-          client.say( channel, "/me Okay, " + display );
+          client.join( userChannel )
+            .then( ( data ) => {
+              channels[ data ] = {
+                lang: defaultLang,
+                color: false,
+                uncensored: false
+              };
+              store.put( "channels", channels );
+              client.say( userChannel, "/me Hello! I am ready to translate" );
+              client.say( channel, "/me Okay, " + userstate[ 'display-name' ] );
+            } )
+            .catch( e => {
+              client.say( channel, `@${ userstate.username } Something went wrong` );
+              console.log( `Something went wrong when trying to join ${ username }'s channel: `, err );
+            } );
+        } else {
+          client.say( channel, "/me Already there" )
         }
         return;
     }
   }
+
+  const isBroadcaster = userChannel == channel;
+  const isMod = userstate.mod;
+  const channelConfig = channels[ channel ]
 
   // Bot managment
   if( isBroadcaster || isMod ) {
@@ -32,6 +44,7 @@ function runCommand( channel, userstate, message, app ) {
       const targetLanguage = message.split( " " )[ 1 ].trim();
       if( translate.languages.isSupported( targetLanguage ) ) {
         channelConfig.lang = translate.languages.getCode( targetLanguage );
+        store.put( "channels", channels );
         client.say( channel, "/me Language was set to " + translate.languages[ channelConfig.lang ] );
       }
       return;
@@ -58,9 +71,12 @@ function runCommand( channel, userstate, message, app ) {
         return client.part( channel );
       case "languagecolor":
       case "langcolor":
-        channelConfig.color = !( channelConfig.color || true );
+      case "languagecolour":
+      case "langcolour":
+        channelConfig.color = !channelConfig.color;
         store.put( "channels", channels );
-        return client.say( channel, "Chat color was " + ( channelConfig.color ? "ENABLED" : "DISABLED" ) );
+        const state = channelConfig.color ? "ENABLED" : "DISABLED"
+        return client.say( channel, `Chat color was ${ state }` );
       case "languagehelp":
       case "langhelp":
         return client.say( channel, "My commands are !lang [language], !langlist, !langcolor, !langstop" );
