@@ -37,6 +37,10 @@ function createMockApp() {
 	}
 }
 
+/*********************************************************
+ * TESTS
+ *********************************************************/
+
 test( 'JOIN: joins new channel', async t => {
 	// mocking
 	const app = createMockApp()
