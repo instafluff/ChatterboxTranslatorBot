@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/instafluff/ChatterboxTranslatorBot.svg?branch=master)](https://travis-ci.com/instafluff/ChatterboxTranslatorBot)
+
 # ChatterboxTranslatorBot
 We built this ChatterboxTranslator as a Twitch Bot live on Twitch!
 
