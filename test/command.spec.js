@@ -37,26 +37,51 @@ function createMockApp() {
 	}
 }
 
+async function executeCommand( channel, userstate, command, application ) {
+	const app = createMockApp()
+
+	if( application ) {
+		if( 'config' in application ) {
+			if( application.config ) {
+				Object.assign( app.channels[ streamerChannelName ], application.config )
+			} else {
+				app.channels[ "#instafluff" ] = application.config
+			}
+		}
+	}
+
+	runCommand( channel, userstate, command, app )
+
+	await Promise.all( [
+		...app.client.join.returnValues,
+		...app.client.part.returnValues,
+	] )
+
+	return app
+}
+
+async function execute_command_with_no_join_leave( t, channel, userstate, command, application ) {
+	const app = await executeCommand( channel, userstate, command, application )
+	const { client: { join, part } } = app
+
+	t.true( join.notCalled, 'has not joined new channel' )
+	t.true( part.notCalled, 'has not left channel' )
+
+	return app
+}
+
 /*********************************************************
  * TESTS
  *********************************************************/
 
 test( 'JOIN: joins new channel', async t => {
 	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ] = undefined
+	const {
+		store: { put }, client: { say, join, part }, channels
+	} = await executeCommand( botChannelName, nonModUserstate, '!join', { config: undefined } )
 
-	// execution
-	runCommand( botChannelName, nonModUserstate, '!join', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledTwice, 'say only called once' );
+	t.true( part.notCalled, 'does not leave any channels' );
 	t.true( join.calledOnce, 'joins channel' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -83,19 +108,10 @@ test( 'JOIN: joins new channel', async t => {
 	);
 } )
 test( 'JOIN: Does nothing if already connected', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, botChannelName, nonModUserstate, '!join' )
 
-	// execution
-	runCommand( botChannelName, nonModUserstate, '!join', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -110,19 +126,10 @@ test( 'JOIN: Does nothing if already connected', async t => {
 	t.true( put.notCalled, 'store update not called' );
 } )
 test( 'JOIN: Does nothing if in away channel', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!join' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!join', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.notCalled, 'say only not called' );
 	t.true( put.notCalled, 'store update not called' );
 	t.deepEqual(
@@ -137,19 +144,10 @@ test( 'JOIN: Does nothing if in away channel', async t => {
 } )
 
 test( 'SET LANGUAGE: lang', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!lang fr' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!lang fr', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -164,19 +162,10 @@ test( 'SET LANGUAGE: lang', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'SET LANGUAGE: language', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!language fr' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!language fr', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -192,19 +181,10 @@ test( 'SET LANGUAGE: language', async t => {
 } )
 
 test( 'LIST: languagelist', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, botChannelName, modUserstate, '!languagelist' )
 
-	// execution
-	runCommand( botChannelName, modUserstate, '!languagelist', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -219,19 +199,10 @@ test( 'LIST: languagelist', async t => {
 	t.true( put.notCalled, 'store update not called' );
 } )
 test( 'LIST: langlist', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, botChannelName, modUserstate, '!langlist' )
 
-	// execution
-	runCommand( botChannelName, modUserstate, '!langlist', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -247,19 +218,10 @@ test( 'LIST: langlist', async t => {
 } )
 
 test( 'CENSOR: languagecensor', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!languagecensor' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!languagecensor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -274,20 +236,10 @@ test( 'CENSOR: languagecensor', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'CENSOR: languagecensor - from true', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ].uncensored = true
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!languagecensor', { config: { uncensored: true } } )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!languagecensor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -302,19 +254,10 @@ test( 'CENSOR: languagecensor - from true', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'CENSOR: langcensor', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!langcensor' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!langcensor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -329,20 +272,10 @@ test( 'CENSOR: langcensor', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'CENSOR: langcensor - from true', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ].uncensored = true
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!langcensor', { config: { uncensored: true } } )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!langcensor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -358,40 +291,24 @@ test( 'CENSOR: langcensor - from true', async t => {
 } )
 
 test( 'LEAVE: languagestop', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say, join, part }, channels
+	} = await executeCommand( botChannelName, modUserstate, '!languagestop' )
 
-	// execution
-	runCommand( botChannelName, modUserstate, '!languagestop', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( part.calledOnce, 'leaves channel' );
+	t.true( join.notCalled, 'does not join a channel' );
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.is( channels[ botChannelName ], undefined, 'channel config should be removed' )
 	t.true( put.called, 'store update called' );
 } )
 test( 'LEAVE: langstop', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say, join, part }, channels
+	} = await executeCommand( botChannelName, modUserstate, '!langstop' )
 
-	// execution
-	runCommand( botChannelName, modUserstate, '!langstop', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( part.calledOnce, 'leaves channel' );
+	t.true( join.notCalled, 'leaves channel' );
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.is( channels[ botChannelName ], undefined, 'channel config should be removed' )
@@ -399,19 +316,10 @@ test( 'LEAVE: langstop', async t => {
 } )
 
 test( 'COLOUR: languagecolor', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!languagecolor' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!languagecolor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -426,20 +334,10 @@ test( 'COLOUR: languagecolor', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: languagecolor - from true', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ].color = true
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!languagecolor', { config: { color: true } } )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!languagecolor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -454,19 +352,10 @@ test( 'COLOUR: languagecolor - from true', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: langcolor', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!langcolor' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!langcolor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -481,20 +370,10 @@ test( 'COLOUR: langcolor', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: langcolor - from true', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ].color = true
+	const {
+		store: { put }, client: { say, }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!langcolor', { config: { color: true } } )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!langcolor', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -509,19 +388,10 @@ test( 'COLOUR: langcolor - from true', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: languagecolour', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!languagecolour' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!languagecolour', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -536,20 +406,10 @@ test( 'COLOUR: languagecolour', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: languagecolour - from true', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ].color = true
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!languagecolour', { config: { color: true } } )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!languagecolour', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -564,19 +424,10 @@ test( 'COLOUR: languagecolour - from true', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: langcolour', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!langcolour' )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!langcolour', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -591,20 +442,10 @@ test( 'COLOUR: langcolour', async t => {
 	t.true( put.called, 'store update called' );
 } )
 test( 'COLOUR: langcolour - from true', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
-	channels[ streamerChannelName ].color = true
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!langcolour', { config: { color: true } } )
 
-	// execution
-	runCommand( streamerChannelName, modUserstate, '!langcolour', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -620,19 +461,10 @@ test( 'COLOUR: langcolour - from true', async t => {
 } )
 
 test( 'HELP: languagehelp', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, botChannelName, modUserstate, '!languagehelp' )
 
-	// execution
-	runCommand( botChannelName, modUserstate, '!languagehelp', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -647,19 +479,10 @@ test( 'HELP: languagehelp', async t => {
 	t.true( put.notCalled, 'store update not called' );
 } )
 test( 'HELP: langhelp', async t => {
-	// mocking
-	const app = createMockApp()
-	const { store: { put }, client: { say, join, part }, channels } = app
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, botChannelName, modUserstate, '!langhelp' )
 
-	// execution
-	runCommand( botChannelName, modUserstate, '!langhelp', app )
-
-	await Promise.all( [
-		...join.returnValues,
-		...part.returnValues,
-	] )
-
-	// assertion
 	t.true( say.calledOnce, 'say only called once' );
 	t.snapshot( say.args, 'Feedback to the user' )
 	t.deepEqual(
@@ -675,11 +498,9 @@ test( 'HELP: langhelp', async t => {
 } )
 
 test( 'ignores non-mods', async t => {
-	// mocking
 	const app = createMockApp()
 	const { store: { put }, client: { say, join, part } } = app
 
-	// execution
 	runCommand( botChannelName, nonModUserstate, '!lang en', app )
 	runCommand( botChannelName, nonModUserstate, '!lang fr', app )
 	runCommand( botChannelName, nonModUserstate, '!lang', app )
@@ -706,7 +527,6 @@ test( 'ignores non-mods', async t => {
 		...part.returnValues,
 	] )
 
-	// assertion
 	t.true( say.notCalled, 'say only not called' );
 	t.true( put.notCalled, 'store update not called' );
 } )
