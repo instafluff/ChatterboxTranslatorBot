@@ -11,6 +11,7 @@ test( 'parses emotes', t => {
 		':-1:',
 		':clock230:',
 		':100:',
+		'😀',
 	].forEach( v =>
 		t.is( parseEmotes( {}, v ), '' )
 	)
@@ -28,6 +29,7 @@ test( 'title', t => {
 test( 'title', t => {
 	[
 		[ {}, 'HENLO :egg:', 'HENLO' ],
+		[ {}, 'HENLO 😀', 'HENLO' ],
 		[
 			{ '88': [ '0-7' ] },
 			'PogChamp',

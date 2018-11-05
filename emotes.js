@@ -1,4 +1,4 @@
-const emoji = require( 'emoji-regex' );
+const emoji = require( 'emoji-regex' )();
 
 module.exports = {
   parseEmotes,
