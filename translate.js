@@ -15,10 +15,11 @@ function translateMessage( channel, userstate, message, app ) {
     if( hasBlacklistedWord( message ) ) return;
 
     // Parsing for emotes
-    let filteredMessage = message.replace( twitchUsernameRegex, '' ).replace( whitespaceRegex, ' ' )
+    let filteredMessage = message
     if( userstate.emotes ) {
       filteredMessage = parseEmotes( userstate.emotes, filteredMessage );
     }
+    filteredMessage = message.replace( twitchUsernameRegex, '' ).replace( whitespaceRegex, ' ' )
 
     if( !filteredMessage ) return;
 
