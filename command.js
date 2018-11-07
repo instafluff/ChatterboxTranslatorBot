@@ -8,12 +8,17 @@ function runCommand( channel, userstate, message, app ) {
   const { prefixRegex, channels } = app
   const command = message.split( /\s/ )[ 0 ].replace( prefixRegex, '' ).toLowerCase()
 
-  if( command in commands ) {
+  if( commands.hasOwnProperty( command ) ) {
     const commandRunner = commands[ command ]
-    if( commandRunner.modOnly && !isMod( channel, userstate ) ) return
-    if( commandRunner.homeOnly && !isHomeChannel( channel, app ) ) return
+    if( !authenticate( commandRunner, channel, userstate, app ) ) return
     commandRunner( app, channel, channels[ channel ], userstate, message )
   }
+}
+
+function authenticate( runner, channel, userstate, app ) {
+  if( runner.modOnly && !isMod( channel, userstate ) ) return false
+  if( runner.homeOnly && !isHomeChannel( channel, app ) ) return false
+  return true
 }
 
 const commands = {}
@@ -111,12 +116,7 @@ add( [ "languagecolor", "langcolor", "languagecolour", "langcolour" ],
 add( [ "languagehelp", "langhelp" ],
   ( app, channelName, __, userstate ) => {
     let commandsList = firstKeys.sort()
-      .filter( key => {
-        const runner = commands[ key ]
-        if( runner.modOnly && !isMod( channelName, userstate ) ) return false
-        if( runner.homeOnly && !isHomeChannel( channelName, app ) ) return false
-        return true
-      } )
+      .filter( key => authenticate( commands[ key ], channelName, userstate, app ) )
       .map( usageMapper )
       .join( ', ' )
 
