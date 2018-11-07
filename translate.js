@@ -19,7 +19,10 @@ function translateMessage( channel, userstate, message, app ) {
     if( userstate.emotes ) {
       filteredMessage = parseEmotes( userstate.emotes, filteredMessage );
     }
-    filteredMessage = message.replace( twitchUsernameRegex, '' ).replace( whitespaceRegex, ' ' )
+    filteredMessage = filteredMessage
+      .replace( twitchUsernameRegex, '' )
+      .replace( whitespaceRegex, ' ' )
+      .trim()
 
     if( !filteredMessage ) return;
 
