@@ -515,8 +515,6 @@ test( 'ignores non-mods', async t => {
 	runCommand( botChannelName, nonModUserstate, '!langstop', app )
 	runCommand( botChannelName, nonModUserstate, '!languagecolor', app )
 	runCommand( botChannelName, nonModUserstate, '!langcolor', app )
-	runCommand( botChannelName, nonModUserstate, '!languagehelp', app )
-	runCommand( botChannelName, nonModUserstate, '!langhelp', app )
 
 	runCommand( botChannelName, nonModUserstate, '!help', app )
 	runCommand( botChannelName, nonModUserstate, '!junk', app )

@@ -8,12 +8,17 @@ function runCommand( channel, userstate, message, app ) {
   const { prefixRegex, channels } = app
   const command = message.split( /\s/ )[ 0 ].replace( prefixRegex, '' ).toLowerCase()
 
-  if( command in commands ) {
+  if( commands.hasOwnProperty( command ) ) {
     const commandRunner = commands[ command ]
-    if( commandRunner.modOnly && !isMod( channel, userstate ) ) return
-    if( commandRunner.homeOnly && !isHomeChannel( channel, app ) ) return
+    if( !authenticate( commandRunner, channel, userstate, app ) ) return
     commandRunner( app, channel, channels[ channel ], userstate, message )
   }
+}
+
+function authenticate( runner, channel, userstate, app ) {
+  if( runner.modOnly && !isMod( channel, userstate ) ) return false
+  if( runner.homeOnly && !isHomeChannel( channel, app ) ) return false
+  return true
 }
 
 const commands = {}
@@ -58,7 +63,12 @@ add( [ "join" ],
       client.say( channelName, "/me Already there" )
     }
   },
-  { homeOnly: true }
+  {
+    homeOnly: true,
+    description: {
+      en: 'join your channel'
+    }
+  }
 )
 add( [ "lang", "language" ],
   ( { channels, store, client }, channelName, channelConfig, userstate, message ) => {
@@ -69,14 +79,24 @@ add( [ "lang", "language" ],
       client.say( channelName, "/me Language was set to " + translate.languages[ channelConfig.lang ] );
     }
   },
-  { modOnly: true, usage: '[language]' }
+  {
+    modOnly: true, usage: '[language]',
+    description: {
+      en: 'update target language on channel'
+    }
+  }
 )
 add( [ "languagelist", "langlist" ],
   ( { client }, channelName ) => {
     const supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
     client.say( channelName, "My supported languages are: " + supportedlanguages );
   },
-  { modOnly: true }
+  {
+    modOnly: true,
+    description: {
+      en: 'list available languages'
+    }
+  }
 )
 add( [ "languagecensor", "langcensor" ],
   ( { channels, store, client }, channelName, channelConfig ) => {
@@ -88,16 +108,26 @@ add( [ "languagecensor", "langcensor" ],
         : "ChatTranslator will now only allow NICE words."
     );
   },
-  { modOnly: true }
+  {
+    modOnly: true,
+    description: {
+      en: 'toggle proffanity censoring'
+    }
+  }
 )
-add( [ "languagestop", "langstop" ],
+add( [ "languagestop", "langstop", "languageleave", "langleave" ],
   ( { channels, store, client }, channelName, channelConfig ) => {
     delete channelConfig;
     store.put( "channels", channels );
     client.say( channelName, "Goodbye!!!" );
     client.part( channelName );
   },
-  { modOnly: true }
+  {
+    modOnly: true,
+    description: {
+      en: 'leave current channel'
+    }
+  }
 )
 add( [ "languagecolor", "langcolor", "languagecolour", "langcolour" ],
   ( { channels, store, client }, channelName, channelConfig ) => {
@@ -106,23 +136,46 @@ add( [ "languagecolor", "langcolor", "languagecolour", "langcolour" ],
     const state = channelConfig.color ? "ENABLED" : "DISABLED"
     client.say( channelName, `Chat color was ${ state }` );
   },
-  { modOnly: true }
+  {
+    modOnly: true,
+    description: {
+      en: 'toggle using /me'
+    }
+  }
 )
 add( [ "languagehelp", "langhelp" ],
-  ( app, channelName, __, userstate ) => {
-    let commandsList = firstKeys.sort()
-      .filter( key => {
-        const runner = commands[ key ]
-        if( runner.modOnly && !isMod( channelName, userstate ) ) return false
-        if( runner.homeOnly && !isHomeChannel( channelName, app ) ) return false
-        return true
-      } )
-      .map( usageMapper )
-      .join( ', ' )
+  ( app, channelName, __, userstate, message ) => {
+    const [ , command ] = message.split( /\s+/ )
 
-    app.client.say( channelName, "My commands are " + commandsList );
+    if( command && commands.hasOwnProperty( command ) ) {
+      const runner = commands[ command ]
+
+      if( authenticate( runner, channelName, userstate, app ) ) {
+        app.client.say(
+          channelName,
+          `The command ${ command } is to ${ runner.description.en }. Usage: ${ usageMapper( command ) }`
+        );
+      } else {
+        app.client.say(
+          channelName,
+          `The command ${ command } is not available to you`
+        );
+      }
+    }
+    else {
+      let commandsList = firstKeys.sort()
+        .filter( key => authenticate( commands[ key ], channelName, userstate, app ) )
+        .map( usageMapper )
+        .join( ', ' )
+
+      app.client.say( channelName, "My commands are " + commandsList );
+    }
   },
-  { modOnly: true }
+  {
+    description: {
+      en: 'provide help'
+    }
+  }
 )
 
 module.exports = { runCommand, commands }
