@@ -41,13 +41,20 @@ function usageMapper( key ) {
 }
 
 add( [ "join" ],
-  ( { channels, store, client }, channelName, channelConfig, { username, [ "display-name" ]: display } ) => {
+  (
+    { channels, store, client },
+    channelName,
+    _,
+    { username, [ "display-name" ]: display },
+    message
+  ) => {
     const userChannel = "#" + username
     if( !channels[ userChannel ] ) {
       client.join( userChannel )
         .then( ( data ) => {
+          const [ , lang = defaultLang ] = message.split( /\s+/ )
           channels[ data ] = {
-            lang: defaultLang,
+            lang: lang,
             color: false,
             uncensored: false
           };
@@ -72,7 +79,7 @@ add( [ "join" ],
 )
 add( [ "lang", "language" ],
   ( { channels, store, client }, channelName, channelConfig, userstate, message ) => {
-    const targetLanguage = message.split( " " )[ 1 ].trim();
+    const [ , targetLanguage = defaultLang ] = message.split( /\s+/ );
     if( translate.languages.isSupported( targetLanguage ) ) {
       channelConfig.lang = translate.languages.getCode( targetLanguage );
       store.put( "channels", channels );

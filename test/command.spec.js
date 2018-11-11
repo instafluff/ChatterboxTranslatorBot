@@ -179,6 +179,24 @@ test( 'SET LANGUAGE: language', async t => {
 	)
 	t.true( put.called, 'store update called' );
 } )
+test( 'SET LANGUAGE: Does not fail when no language param is provided, defaulting to English', async t => {
+	const {
+		store: { put }, client: { say }, channels
+	} = await execute_command_with_no_join_leave( t, streamerChannelName, modUserstate, '!language', { lang: 'cy' } )
+
+	t.true( say.calledOnce, 'say only called once' );
+	t.snapshot( say.args, 'Feedback to the user' )
+	t.deepEqual(
+		channels[ streamerChannelName ],
+		{
+			lang: 'en',
+			color: false,
+			uncensored: false
+		},
+		'channel config should be mutated'
+	)
+	t.true( put.called, 'store update called' );
+} )
 
 test( 'LIST: languagelist', async t => {
 	const {
