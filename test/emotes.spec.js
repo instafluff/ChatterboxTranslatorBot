@@ -77,3 +77,21 @@ test( 'title', t => {
 		t.is( parseEmotes( emoteMap, input ), expected )
 	)
 } );
+
+test( 'does not throw exception when given emote with regex chars', t => {
+	[
+		// Twitch emotes
+		':/', ':(', ':o', ':z', 'B)', ':\\', ';)', ';p', ':p', 'R)', 'o_O',
+		':D', '>(', '<3', '<3', 'R)', ':>', '<]', ':7', ':(', ':P', ';P',
+		':O', ':\\', ':|', ':s', ':D', 'o_O', '>(', ':)', 'B)', ';)', '#/',
+		// Testing others
+		'][\\^$.|?*+)(}{',
+
+	].forEach( ( v, i ) => {
+		const emoteInfo = n =>
+			( { [ 'unsafe-' + i ]: [ `${ n }-${ v.length + ( n - 1 ) }` ] } )
+
+		t.is( parseEmotes( emoteInfo( 5 ), `xxxx ${ v } xxxx` ), 'xxxx xxxx' )
+		t.is( parseEmotes( emoteInfo( 0 ), v ), '' )
+	} )
+} );

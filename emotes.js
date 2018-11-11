@@ -6,40 +6,61 @@ module.exports = {
 
 const whitespaceRegex = module.exports.whitespaceRegex = /\s+/g
 const doubleColonRegex = /:(\w|-|\+)+:/g
+
+// regex creation
 const emoteRegexMap = new Map()
-const delim = '[EMOTE-ERROR] '
-const errorMapper = ln => delim + ln
+const regexChar = /\[|\\|\^|\$|\.|\||\?|\*|\+|\(|\)/g
+const escapeChar = char => '\\' + char
+const startBound = '(^|\\b|\\s)'
+const endBound = '($|\\b|\\s)'
 
 function parseEmotes( emotes, message ) {
   let parsed = message;
 
   for( var emoteID in emotes ) {
-    let emoteText
-    try {
-      if( !emotes.hasOwnProperty( emoteID ) ) return
+    if( !emotes.hasOwnProperty( emoteID ) ) return
 
-      let regex = emoteRegexMap.get( emoteID )
+    let regex = emoteRegexMap.get( emoteID )
 
-      if( !regex ) {
-        const [ start, end ] = emotes[ emoteID ][ 0 ].split( '-' );
-        emoteText = message.substring( Number( start ), Number( end ) + 1 )
-        regex = new RegExp( `\\b${ emoteText }\\b`, 'g' );
-        emoteRegexMap.set( emoteID, regex )
+    if( !regex ) {
+      let [ start, end ] = emotes[ emoteID ][ 0 ]
+        .split( '-' )
+        .map( Number );
+      end++
+
+      if( start === 0 && end === message.length ) {
+        return ''
       }
 
-      parsed = parsed.replace( regex, '' );
-    } catch( e ) {
-      e.message = e.message.split( '/n' ).map( errorMapper ).join( '\n' )
-      console.log(
-        `${ delim }An error occured when parsing for emotes in: ${ emoteID } -> ${ emotes }\n`,
-        `${ delim }Message: ${ message }\n`,
-        e
-      );
+      let emoteText = message.substring( start, end )
+        .replace( regexChar, escapeChar )
+
+      try {
+        regex = new RegExp( startBound + emoteText + endBound, 'g' );
+      } catch( e ) {
+        console.log( 'Exception on emote: ', emoteText, ': ', e );
+        /**
+         * If there was an exception, don't try to use an non-existant regex
+         */
+        continue;
+      }
+
+      emoteRegexMap.set( emoteID, regex )
     }
+
+    /*
+     * Because the regexes match against bounding whitespace,
+     * a whitespace character needs to be inserted
+     * to prevent words from being falsely concatenated.
+     * But will be tidied up before returning.
+     */
+    parsed = parsed.replace( regex, ' ' );
   }
 
-  parsed = parsed.replace( doubleColonRegex, '' )
-  parsed = parsed.replace( emoji, '' )
-  parsed = parsed.trim().replace( whitespaceRegex, ' ' );
+  parsed = parsed
+    .replace( doubleColonRegex, '' )
+    .replace( emoji, '' )
+    .replace( whitespaceRegex, ' ' )
+    .trim();
   return parsed
 }
