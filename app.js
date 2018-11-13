@@ -34,12 +34,23 @@ client.connect();
 
 const appInjection = { client, prefixRegex, botChannelName, store, channels, translations, request }
 
+const errorPrefix = "\n[onMessage]  "
+
 function onMessage( channel, userstate, message, self ) {
   if( self ) return;
 
-  if( message.match( prefixRegex ) ) {
-    runCommand( channel, userstate, message, appInjection )
-  } else if( channels[ channel ] ) {
-    translateMessage( channel, userstate, message, appInjection )
+  try {
+    if( message.match( prefixRegex ) ) {
+      runCommand( channel, userstate, message, appInjection )
+    } else if( channels[ channel ] ) {
+      translateMessage( channel, userstate, message, appInjection )
+    }
+  } catch( error ) {
+    console.log(
+      errorPrefix + "Failed handling message!",
+      errorPrefix + "From:  " + userstate.username,
+      errorPrefix + "Message:  " + message,
+      errorPrefix + "Error:  ", error
+    );
   }
 }
