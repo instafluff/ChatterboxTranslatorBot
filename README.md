@@ -1,30 +1,44 @@
 [![Build Status](https://travis-ci.com/instafluff/ChatterboxTranslatorBot.svg?branch=master)](https://travis-ci.com/instafluff/ChatterboxTranslatorBot)
 
 # ChatterboxTranslatorBot
-We built this ChatterboxTranslator as a Twitch Bot live on Twitch!
+We built this ChatterboxTranslator bot ([Official Channel](https://www.twitch.tv/chattranslator)). A chat bot for realtime translations in Twitch chat!
+
+The bot detects and translates chat messages of other languages into the target language set by the streamer in real-time.
 
 ## Instafluff ##
 > *Come and hang out with us at the Comfiest Corner on Twitch!*
-
+>
 > https://twitch.tv/instafluff
-
+>
 > https://twitter.com/instafluffTV
 
-## Info ##
+## Commands ##
+(Commands are only permitted to the Streamer and Moderators)
 
-Real-time Translation of Twitch Chat
+* `!join [lang]` - Used only from twitch.tv/ChatTranslator by the streamer to have the bot join the channel
+* `!langhelp` - Prints out available commands for this Bot
+* `!lang [code]` - Sets the target language for the channel using a language code (e.g. en for English)
+* `!langleave` - Makes the Bot leave the channel
+* `!langlist` - Prints a list of available languages for Translation
+* `!langcolor` - Toggles the translated text color between normal chat and /me action.
+* `!langcensor` - Toggles naughty word censorship.
 
-Description: This bot detects and translates chat messages of other languages into the target language set by the streamer in real-time.
+## Instructions ##
 
-Commands: (Commands are only allowed by the Streamer and Moderators)
-
-* !join - Used only from twitch.tv/ChatTranslator by the streamer to have the bot join the channel
-* !languagehelp / !langhelp - Prints out available commands for this Bot
-* !language [code] / !lang [code] - Sets the target language for the channel using a language code (e.g. en for English)
-* !languagestop / !langstop - Makes the Bot leave the channel
-* !languagelist / !langlist - Prints a list of available languages for Translation
-* !languagecolor / !langcolor - Toggles the translated text color between normal chat and /me action.
-* !languagecensor / !langcensor - Toggles naughty word censorship.
+1. Install NodeJS - [https://nodejs.org/en/](https://nodejs.org/en/)
+2. Open the directory in a Command Prompt/Terminal
+3. Install Dependencies: `npm install`
+4. Get a Twitch Chat OAuth Password Token - [here](http://twitchapps.com/tmi/)
+5. Get a Yandex key from - [here](https://translate.yandex.com/developers/keys)
+6. Edit the file named `.env` that looks like this:
+```env
+TWITCHUSER=[YOUR-USERNAME-HERE]
+OAUTH=[YOUR-OAUTH-PASS HERE]
+YANDEX_KEY=[Yandex Key Here]
+```
+7. Run bot: `npm start` or `npm dev`
+8. Browse to your bot's chat
+9. Use the command `!join`
 
 ## Credits ##
 Thank you to all the participants of this project!
@@ -38,18 +52,3 @@ And to the participants who helped make this bot a reality!
 and to all people who used naughty words FOR THE SCIENCE and helped optimize the bot!
 
 **MacabreMan2, Instafriend, Instafluff, wietlol, Neo_TA, That_MS_Gamer, pipskidoodle, jellydance, Kyoslilmonster, Lichsmash, Polarami, InSanityParty, neniltheelf, MrRayKoma, Stay_Hydrated_Bot, MerlinLeWizard, Mikeystea, carbon_add, lizardqueen, ItsNaomiArt, sparky_pugwash, lastleap, vic_likadabooty, BountyHunterLani, blackdawn1980, mrPlus, vPositive, shinageeexpress, GeoRevilo, The_Modern_Alchemist, Sum_Wun, PokemoHero, TheArtofDHT, madridr4, letchik322, FlyToto_, ChatTranslator, flappieh, Kara_Kim, FuriousFur, AgroKragle, Deitypotato, JustRandomGamess, AlexHicks, Gwozilla, Leemyy, QeraiX, BOSSTIEN, CriticalKnit**
-
-## Instructions ##
-
-1. Install NodeJS - [https://nodejs.org/en/](https://nodejs.org/en/)
-2. Open the directory in a Command Prompt/Terminal
-3. Install Dependencies: `npm install`
-4. Get a Twitch Chat OAuth Password Token - [http://twitchapps.com/tmi/](http://twitchapps.com/tmi/)
-4. Create a file named `.env` that looks like this:
-```javascript
-PORT=8000
-TWITCHUSER=[YOUR-USERNAME-HERE]
-OAUTH=[YOUR-OAUTH-PASS HERE] # e.g. OAUTH=oauth:kjh12bn1hsj78445234
-```
-5. Run Server: `npm start`
-6. View the webpage from your web browser! [http://localhost:8000](http://localhost:8000)
