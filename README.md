@@ -41,6 +41,11 @@ YANDEX_KEY=[Yandex Key Here]
 9. Use the command `!join`
 
 ## Credits ##
+
+Special thank you for the code contributions!
+
+- *Jason Allan*
+
 Thank you to all the participants of this project!
 
 **MacabreMan2, Instafluff, Soldi3rGam3r, That_MS_Gamer, Instafriend, Polarami, kingswerv, ItsNaomiArt, BountyHunterLani, OhScee, DVM59, samchitto, lizardqueen, therealoliveryoutuber, Kara_Kim, raleenakaos, nightsilas, stresstest, malfunct, Amarogine, kaisuke, Deitypotato, HeyOhKei, GeoRevilo, mallesbixie, MalForTheWin, teemerae, CrimsonKnightZero, jellydance, QeraiX, momokohyhy, slfhighfive, VanityShowcase, MerlinLeWizard, FuriousFur, ANGRYPASTA9999, Nordegraf, MisterHex, wietlol, sparky_pugwash, dinnsdale, Xynal, Ellesria, LamerYo, Neo_TA, Mikeystea, DJCarmichael, Yenyon, ChatTranslator, GSOcreative, where_is_laughingman, Liayda, Motabor, knugensugen**
