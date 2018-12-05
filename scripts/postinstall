@@ -3,7 +3,7 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
 
-const basePath = __dirname.replace( /\/scripts$/, '' )
+const basePath = __dirname.replace( /(\\|\/)scripts$/, '' )
 
 addDefaultFiles( 'blacklist.txt', '' )
 addDefaultFiles( 'channels.db', '{}' )
