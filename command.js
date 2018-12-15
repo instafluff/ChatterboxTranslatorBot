@@ -125,6 +125,7 @@ add( [ "languagecensor", "langcensor" ],
 add( [ "languagestop", "langstop", "languageleave", "langleave" ],
   ( { channels, store, client }, channelName, channelConfig ) => {
     delete channelConfig;
+    delete channels[ channelName ];
     store.put( "channels", channels );
     client.say( channelName, "Goodbye!!!" );
     client.part( channelName );
