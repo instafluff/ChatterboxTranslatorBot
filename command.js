@@ -1,4 +1,4 @@
-const translate = require( 'google-translate-api' );
+const translate = require( './languages' );
 const defaultLang = "en";
 
 const isMod = ( channelName, userstate ) => userstate.mod || "#" + userstate.username == channelName
