@@ -1,5 +1,6 @@
 const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
 const { parseEmotes, whitespaceRegex } = require( './emotes' );
+const languages = require( './languages' );
 const langDetect = require("@chattylabs/language-detection");
 const maxMessageLength = 64;
 const memTranslations = [];
@@ -82,7 +83,7 @@ function translateMessage( channel, userstate, message, app ) {
 
 function sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, fromRequest = false ) {
   const { client, channels } = app
-  const { uncensored, color } = channels[ channel ]
+  const { uncensored, color, langshow } = channels[ channel ]
   let text, langFrom;
 
   if( fromRequest ) {
@@ -104,7 +105,7 @@ function sendTranslationFromResponse( language, filteredMessage, channel, userst
     text = naughtyToNice( text );
   }
 
-  client.say( channel, `${ color ? "/me " : "" }${ userstate[ "display-name" ] }: ${ text }` );
+  client.say( channel, `${ color ? "/me " : "" }${ langshow ? "(" + languages[ langFrom.split("-")[ 0 ] ] + ") " : "" }${ userstate[ "display-name" ] }: ${ text }` );
 }
 
 module.exports = { translateMessage }

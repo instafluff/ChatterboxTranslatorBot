@@ -56,7 +56,8 @@ add( [ "join" ],
           channels[ data ] = {
             lang: lang,
             color: false,
-            uncensored: false
+            uncensored: false,
+            langshow: false
           };
           store.put( "channels", channels );
           client.say( userChannel, "/me Hello! I am ready to translate" );
@@ -118,7 +119,7 @@ add( [ "languagecensor", "langcensor" ],
   {
     modOnly: true,
     description: {
-      en: 'toggle proffanity censoring'
+      en: 'toggle profanity censoring'
     }
   }
 )
@@ -182,6 +183,23 @@ add( [ "languagehelp", "langhelp" ],
   {
     description: {
       en: 'provide help'
+    }
+  }
+)
+add( [ "languageshow", "langshow" ],
+  ( { channels, store, client }, channelName, channelConfig ) => {
+    channelConfig.langshow = !channelConfig.langshow;
+    store.put( "channels", channels );
+    client.say( channelName,
+      channelConfig.langshow
+        ? "ChatTranslator will now show the language name."
+        : "ChatTranslator will now only show the translated message."
+    );
+  },
+  {
+    modOnly: true,
+    description: {
+      en: 'toggle language tag'
     }
   }
 )
