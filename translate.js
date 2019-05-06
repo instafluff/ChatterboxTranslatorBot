@@ -1,5 +1,6 @@
 const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
 const { parseEmotes, whitespaceRegex } = require( './emotes' );
+const langDetect = require("@chattylabs/language-detection");
 const maxMessageLength = 64;
 const memTranslations = [];
 const memLimit = 1000;
@@ -10,6 +11,9 @@ function translateMessage( channel, userstate, message, app ) {
   {
     const { translations, request, channels } = app
     const language = channels[ channel ].lang;
+    // Check if the language is already the target language
+    const result = langDetect( message );
+    if( result.language === language ) return;
 
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
