@@ -1,4 +1,4 @@
-const translate = require( './languages' );
+const languages = require( './languages' );
 const defaultLang = "en";
 
 const isMod = ( channelName, userstate ) => userstate.mod || "#" + userstate.username == channelName
@@ -80,10 +80,10 @@ add( [ "join" ],
 add( [ "lang", "language" ],
   ( { channels, store, client }, channelName, channelConfig, userstate, message ) => {
     const [ , targetLanguage = defaultLang ] = message.split( /\s+/ );
-    if( translate.languages.isSupported( targetLanguage ) ) {
-      channelConfig.lang = translate.languages.getCode( targetLanguage );
+    if( languages.isSupported( targetLanguage ) ) {
+      channelConfig.lang = languages.getCode( targetLanguage );
       store.put( "channels", channels );
-      client.say( channelName, "/me Language was set to " + translate.languages[ channelConfig.lang ] );
+      client.say( channelName, "/me Language was set to " + languages[ channelConfig.lang ] );
     }
   },
   {
@@ -95,7 +95,7 @@ add( [ "lang", "language" ],
 )
 add( [ "languagelist", "langlist" ],
   ( { client }, channelName ) => {
-    const supportedlanguages = Object.keys( translate.languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
+    const supportedlanguages = Object.keys( languages ).filter( lang => lang != "auto" && lang != "isSupported" && lang != "getCode" ).join( ", " );
     client.say( channelName, "My supported languages are: " + supportedlanguages );
   },
   {
