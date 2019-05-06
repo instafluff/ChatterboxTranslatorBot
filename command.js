@@ -203,5 +203,32 @@ add( [ "languageshow", "langshow" ],
     }
   }
 )
+add( [ "languageignore", "langignore" ],
+  ( { channels, store, client }, channelName, channelConfig, userstate, message ) => {
+    var [ , username ] = message.split( /\s+/ );
+    if( !username ) return;
+    username = username.toLowerCase();
+    if( !channelConfig.ignore ) { channelConfig.ignore = {} };
+    if( channelConfig.ignore[ username ] ) {
+      delete channelConfig.ignore[ username ];
+      client.say( channelName,
+        "ChatTranslator will no longer ignore " + username
+      );
+    }
+    else {
+      channelConfig.ignore[ username ] = true;
+      client.say( channelName,
+        "ChatTranslator will now ignore " + username
+      );
+    }
+    store.put( "channels", channels );
+  },
+  {
+    modOnly: true,
+    description: {
+      en: 'toggle ignore user'
+    }
+  }
+)
 
 module.exports = { runCommand, commands }
