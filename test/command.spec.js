@@ -89,6 +89,7 @@ test( 'JOIN: joins new channel', async t => {
 		{
 			lang: 'en',
 			color: false,
+			langshow: false,
 			uncensored: false
 		},
 		'added new channel config'
@@ -100,6 +101,7 @@ test( 'JOIN: joins new channel', async t => {
 				[ '#' + nonModUserstate.username ]: {
 					lang: 'en',
 					color: false,
+					langshow: false,
 					uncensored: false,
 				}
 			}

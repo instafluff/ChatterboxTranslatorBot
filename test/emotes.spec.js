@@ -17,7 +17,7 @@ test( 'parses emotes', t => {
 	)
 } );
 
-test( 'title', t => {
+test( 'removes double colon emotes', t => {
 	[
 		':hello world:',
 		'hello :hello world: world',
@@ -26,7 +26,7 @@ test( 'title', t => {
 	)
 } );
 
-test( 'title', t => {
+test( 'removes various emotes from message text', t => {
 	[
 		[ {}, 'HENLO :egg:', 'HENLO' ],
 		[ {}, 'HENLO 😀', 'HENLO' ],
