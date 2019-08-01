@@ -1,3 +1,4 @@
+const uuidv4 = require('uuid/v4');
 const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
 const { parseEmotes, whitespaceRegex } = require( './emotes' );
 const languages = require( './languages' );
@@ -85,6 +86,106 @@ function translateMessage( channel, userstate, message, app ) {
   }
 }
 
+function translateMessageWithAzure( channel, userstate, message, app ) {
+  {
+    const { translations, request, channels } = app
+    const language = channels[ channel ].lang;
+    const ignore = channels[ channel ].ignore || {};
+    // User filtering
+    if( userstate.username && ignore[ userstate.username ] ) return;
+
+    // Check if the language is already the target language
+    // const result = langDetect( message );
+    // if( result.language === language ) return;
+
+    // Blacklist filtering
+    if( hasBlacklistedWord( message ) ) return;
+
+    // Parsing for emotes
+    let filteredMessage = message
+    if( userstate.emotes ) {
+      filteredMessage = parseEmotes( userstate.emotes, filteredMessage );
+    }
+    filteredMessage = filteredMessage
+      .replace( twitchUsernameRegex, '' )
+      .replace( whitespaceRegex, ' ' )
+      .trim()
+
+    // console.log( filteredMessage );
+
+    if( !filteredMessage ) return;
+
+    // Caching
+    if( filteredMessage.length < maxMessageLength ) {
+      // Attempt to retrieve from cache
+      const resp = translations.get( filteredMessage ) || undefined;
+      if( resp && resp[ language ] )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
+    } else {
+      // Check memTranslations for long-message caches
+      const resp = memTranslations.find( translation => translation.message == filteredMessage )
+      if( resp && resp[ language ] )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
+    }
+
+    // Get Translation from translateMessageWithAzure
+    let options = {
+        method: 'POST',
+        baseUrl: 'https://api.cognitive.microsofttranslator.com/',
+        url: 'translate',
+        qs: {
+          'api-version': '3.0',
+          'to': [ language ]
+        },
+        headers: {
+          'Ocp-Apim-Subscription-Key': process.env.AZURE_KEY,
+          'Content-type': 'application/json',
+          'X-ClientTraceId': uuidv4().toString()
+        },
+        body: [{
+              'text': filteredMessage
+        }],
+        json: true,
+    };
+
+    request( options, function( err, res, body ) {
+      console.log( err, body, body[ 0 ].translations );
+        translationCalls++;
+        if( translationCalls % 50 === 0 ) console.log( "API calls" + translationCalls );
+        // Error handling
+        if( err ) {
+          return console.log( "Error in translation request", err );
+        }
+        try {
+          if( body && body.length > 0 ) {
+            var resp = {
+              text: [ body[ 0 ].translations[ 0 ].text ],
+              lang: body[ 0 ].detectedLanguage.language
+            };
+            sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, true );
+            // Cache translation
+            if( filteredMessage.length < maxMessageLength ) {
+              const translation = translations.get( filteredMessage ) || {};
+              translation[ language ] = resp;
+              translations.put( filteredMessage, translation );
+            }
+            else {
+              if( memTranslations.length >= memLimit ) {
+                memTranslations.splice( 0, 1 );
+              }
+              memTranslations.push( {
+                message: filteredMessage,
+                [ language ]: resp
+              } );
+            }
+          }
+        } catch( e ) {
+          console.log( e );
+        }
+    });
+  }
+}
+
 function sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, fromRequest = false ) {
   const { client, channels } = app
   const { uncensored, color, langshow } = channels[ channel ]
@@ -112,4 +213,4 @@ function sendTranslationFromResponse( language, filteredMessage, channel, userst
   client.say( channel, `${ color ? "/me " : "" }${ langshow ? "(" + languages[ langFrom.split("-")[ 0 ] ] + ") " : "" }${ userstate[ "display-name" ] }: ${ text }` );
 }
 
-module.exports = { translateMessage }
+module.exports = { translateMessage, translateMessageWithAzure }

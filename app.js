@@ -5,7 +5,7 @@ const request = require( 'request' );
 const Storage = require( 'node-storage' );
 
 const { runCommand } = require( './command' );
-const { translateMessage } = require( './translate' );
+const { translateMessage, translateMessageWithAzure } = require( './translate' );
 
 const store = new Storage( "channels.db" );
 const translations = new Storage( "translations.db" );
@@ -38,12 +38,13 @@ const errorPrefix = "\n[onMessage]  "
 
 function onMessage( channel, userstate, message, self ) {
   if( self ) return;
+  if( userstate.username === "chattranslator" ) return;
 
   try {
     if( message.match( prefixRegex ) ) {
       runCommand( channel, userstate, message, appInjection )
     } else if( channels[ channel ] ) {
-      translateMessage( channel, userstate, message, appInjection )
+      translateMessageWithAzure( channel, userstate, message, appInjection )
     }
   } catch( error ) {
     console.log(
