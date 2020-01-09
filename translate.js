@@ -10,7 +10,7 @@ const twitchUsernameRegex = /@[a-zA-Z0-9_]{4,25}\b/gi
 let translationCalls = 0;
 
 function translateMessage( channel, userstate, message, app ) {
-  {
+  try {
     const { translations, request, channels } = app
     const language = channels[ channel ].lang;
     const ignore = channels[ channel ].ignore || {};
@@ -83,6 +83,9 @@ function translateMessage( channel, userstate, message, app ) {
           console.log( e );
         }
       } );
+  }
+  catch( err ) {
+	  return;
   }
 }
 
