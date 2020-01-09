@@ -1,6 +1,6 @@
 require( 'dotenv' ).config();
 
-const TwitchJS = require( 'twitch-js' );
+const tmi = require( 'tmi.js' );
 const request = require( 'request' );
 const Storage = require( 'node-storage' );
 
@@ -14,17 +14,16 @@ const botChannelName = "#" + process.env.TWITCHUSER;
 const prefix = '!'
 const prefixRegex = new RegExp( '^' + prefix )
 
-const client = new TwitchJS.client( {
-  options: {
-    debug: false
-  },
+const client = new tmi.Client({
+  options: { debug: false },
   connection: {
-    reconnect: true,
+	  secure: true,
+	  reconnect: true,
   },
   channels: Object.keys( channels ).concat( botChannelName ),
   identity: {
-    username: process.env.TWITCHUSER,
-    password: process.env.OAUTH
+	  username: process.env.TWITCHUSER,
+	  password: process.env.OAUTH
   },
 } );
 client.on( 'chat', onMessage );
@@ -44,7 +43,8 @@ function onMessage( channel, userstate, message, self ) {
     if( message.match( prefixRegex ) ) {
       runCommand( channel, userstate, message, appInjection )
     } else if( channels[ channel ] ) {
-      translateMessageWithAzure( channel, userstate, message, appInjection )
+      // translateMessageWithAzure( channel, userstate, message, appInjection )
+	  translateMessage( channel, userstate, message, appInjection )
     }
   } catch( error ) {
     console.log(
