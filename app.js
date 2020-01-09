@@ -5,7 +5,7 @@ const request = require( 'request' );
 const Storage = require( 'node-storage' );
 
 const { runCommand } = require( './command' );
-const { translateMessage, translateMessageWithAzure } = require( './translate' );
+const { translateMessage, translateMessageWithAzure, translateMessageComfyTranslations } = require( './translate' );
 
 const store = new Storage( "channels.db" );
 const translations = new Storage( "translations.db" );
@@ -13,6 +13,15 @@ const channels = store.get( "channels" ) || {};
 const botChannelName = "#" + process.env.TWITCHUSER;
 const prefix = '!'
 const prefixRegex = new RegExp( '^' + prefix )
+
+function randomSimpleHash( s ) {
+	return s.split( "" ).map( c => c.charCodeAt( 0 ) ).reduce( ( p, c ) => p + c, 0 );
+}
+
+const serverId = 0;
+const serverCount = 1;
+let serverChannels = Object.keys( channels ).concat( botChannelName ).filter( x => randomSimpleHash( x ) % serverCount === serverId );
+console.log( serverChannels );
 
 const client = new tmi.Client({
   options: { debug: false },
@@ -44,7 +53,7 @@ function onMessage( channel, userstate, message, self ) {
       runCommand( channel, userstate, message, appInjection )
     } else if( channels[ channel ] ) {
       // translateMessageWithAzure( channel, userstate, message, appInjection )
-	  translateMessage( channel, userstate, message, appInjection )
+	  translateMessageComfyTranslations( channel, userstate, message, appInjection );
     }
   } catch( error ) {
     console.log(

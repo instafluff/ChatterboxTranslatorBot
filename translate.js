@@ -189,6 +189,128 @@ function translateMessageWithAzure( channel, userstate, message, app ) {
   }
 }
 
+const ComfySheets = require( "comfysheets" );
+let comfyTranslations = {};
+
+async function loadTranslations() {
+	var translationList = await ComfySheets.Read( process.env.SHEETID, 'Form Responses 1', {
+		"Original": "message",
+		"Original Language": "from",
+		"Translation": "translation",
+		"Translation Language": "to",
+	} );
+	translationList.forEach( t => {
+		const message = t.message.toLowerCase();
+		if( !comfyTranslations[ message ] ) {
+			comfyTranslations[ message ] = {
+				lang: t.from
+			};
+		}
+		comfyTranslations[ message ][ t.to ] = t.translation;
+	});
+	console.log( comfyTranslations );
+}
+async function addTranslation( message, langFrom, translation, langTo ) {
+	if( !comfyTranslations[ message ] ) {
+		comfyTranslations[ message ] = {
+			lang: langFrom.split("-")[ 0 ]
+		};
+	}
+	comfyTranslations[ message ][ langTo ] = translation;
+	let result = await ComfySheets.Submit( process.env.FORMID, {
+		'entry.364437775': message,
+		'entry.1672632710': langFrom.split("-")[ 0 ],
+		'entry.1464209519': translation,
+		'entry.1190780107': langTo,
+	});
+}
+loadTranslations();
+
+function translateMessageComfyTranslations( channel, userstate, message, app ) {
+  try {
+    const { translations, request, channels } = app
+    const language = channels[ channel ].lang;
+    const ignore = channels[ channel ].ignore || {};
+    // User filtering
+    if( userstate.username && ignore[ userstate.username ] ) return;
+
+    // Check if the language is already the target language
+    const result = langDetect( message );
+    if( result.language === language ) return;
+
+    // Blacklist filtering
+    if( hasBlacklistedWord( message ) ) return;
+
+    // Parsing for emotes
+    let filteredMessage = message
+    if( userstate.emotes ) {
+      filteredMessage = parseEmotes( userstate.emotes, filteredMessage );
+    }
+    filteredMessage = filteredMessage
+      .replace( twitchUsernameRegex, '' )
+      .replace( whitespaceRegex, ' ' )
+      .trim()
+
+    if( !filteredMessage ) return;
+
+    // Caching
+    if( filteredMessage.length < maxMessageLength ) {
+      // Attempt to retrieve from cache
+      const trans = comfyTranslations[ filteredMessage.toLowerCase() ] || undefined;
+	  if( trans && trans[ language ] ) {
+		  const resp = {
+			  [ language ] : {
+				text: [ trans[ language ] ],
+				lang: trans.lang,
+			  }
+		  };
+		  return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app );
+	  }
+    } else {
+      // Check memTranslations for long-message caches
+      const resp = memTranslations.find( translation => translation.message == filteredMessage )
+      if( resp && resp[ language ] )
+        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
+    }
+
+    // Get Translation from yandex
+    request.get(
+      "https://translate.yandex.net/api/v1.5/tr.json/translate?key=" + process.env.YANDEX_KEY + "&lang=" + language + "&text=" + encodeURI( filteredMessage ),
+      ( err, res, body ) => {
+        translationCalls++;
+        if( translationCalls % 50 === 0 ) console.log( "API calls" + translationCalls );
+        // Error handling
+        if( err ) {
+          return console.log( "Error in translation request", err );
+        }
+        try {
+          const resp = JSON.parse( body );
+          if( resp && resp.lang ) {
+            sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, true );
+            // Cache translation
+            if( filteredMessage.length < maxMessageLength ) {
+				addTranslation( filteredMessage.toLowerCase(), resp.lang, resp.text[ 0 ], language );
+            }
+            else {
+              if( memTranslations.length >= memLimit ) {
+                memTranslations.splice( 0, 1 );
+              }
+              memTranslations.push( {
+                message: filteredMessage,
+                [ language ]: resp
+              } );
+            }
+          }
+        } catch( e ) {
+          console.log( e );
+        }
+      } );
+  }
+  catch( err ) {
+	  return;
+  }
+}
+
 function sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, fromRequest = false ) {
   const { client, channels } = app
   const { uncensored, color, langshow } = channels[ channel ]
@@ -216,4 +338,4 @@ function sendTranslationFromResponse( language, filteredMessage, channel, userst
   client.say( channel, `${ color ? "/me " : "" }${ langshow ? "(" + languages[ langFrom.split("-")[ 0 ] ] + ") " : "" }${ userstate[ "display-name" ] }: ${ text }` );
 }
 
-module.exports = { translateMessage, translateMessageWithAzure }
+module.exports = { translateMessage, translateMessageWithAzure, translateMessageComfyTranslations }

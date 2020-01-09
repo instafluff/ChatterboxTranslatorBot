@@ -23,6 +23,7 @@
   "homepage": "https://github.com/instafluff/DinoPoints#readme",
   "dependencies": {
     "@chattylabs/language-detection": "^0.1.1",
+    "comfysheets": "^1.0.0",
     "dotenv": "^6.2.0",
     "emoji-regex": "^7.0.1",
     "node-storage": "0.0.7",
