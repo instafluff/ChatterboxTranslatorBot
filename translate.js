@@ -121,7 +121,7 @@ async function translateMessageWithAzure( channel, userstate, message, app ) {
     if( !filteredMessage ) return;
 
     // Caching
-	const cachedTranslation = await ComfyDB.Get( filteredMessage ) || undefined;
+	const cachedTranslation = await ComfyDB.Get( filteredMessage, "translations" ) || undefined;
 	if( cachedTranslation && cachedTranslation[ language ] ) {
 		console.log( "found cache!", cachedTranslation );
 	  return sendTranslationFromResponse( language, filteredMessage, channel, userstate, cachedTranslation, app );
@@ -157,9 +157,9 @@ async function translateMessageWithAzure( channel, userstate, message, app ) {
         sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, true );
 
         // Cache translation
-		const translation = await ComfyDB.Get( filteredMessage ) || {};
+		const translation = await ComfyDB.Get( filteredMessage, "translations" ) || {};
 		translation[ language ] = resp;
-		await ComfyDB.Store( filteredMessage, translation );
+		await ComfyDB.Store( filteredMessage, translation, "translations" );
       }
 	}
 	catch( err ) {
