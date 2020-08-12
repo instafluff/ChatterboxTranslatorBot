@@ -1,4 +1,6 @@
 const uuidv4 = require('uuid/v4');
+const fetch = require( "node-fetch" );
+const ComfyDB = require( "comfydb" );
 const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
 const { parseEmotes, whitespaceRegex } = require( './emotes' );
 const languages = require( './languages' );
@@ -89,7 +91,7 @@ function translateMessage( channel, userstate, message, app ) {
   }
 }
 
-function translateMessageWithAzure( channel, userstate, message, app ) {
+async function translateMessageWithAzure( channel, userstate, message, app ) {
   {
     const { translations, request, channels } = app
     const language = channels[ channel ].lang;
@@ -98,8 +100,8 @@ function translateMessageWithAzure( channel, userstate, message, app ) {
     if( userstate.username && ignore[ userstate.username ] ) return;
 
     // Check if the language is already the target language
-    // const result = langDetect( message );
-    // if( result.language === language ) return;
+    const result = langDetect( message );
+    if( result.language === language ) return;
 
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
@@ -119,73 +121,50 @@ function translateMessageWithAzure( channel, userstate, message, app ) {
     if( !filteredMessage ) return;
 
     // Caching
-    if( filteredMessage.length < maxMessageLength ) {
-      // Attempt to retrieve from cache
-      const resp = translations.get( filteredMessage ) || undefined;
-      if( resp && resp[ language ] )
-        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
-    } else {
-      // Check memTranslations for long-message caches
-      const resp = memTranslations.find( translation => translation.message == filteredMessage )
-      if( resp && resp[ language ] )
-        return sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app )
+	const cachedTranslation = await ComfyDB.Get( filteredMessage ) || undefined;
+	if( cachedTranslation && cachedTranslation[ language ] ) {
+		console.log( "found cache!", cachedTranslation );
+	  return sendTranslationFromResponse( language, filteredMessage, channel, userstate, cachedTranslation, app );
     }
 
-    // Get Translation from translateMessageWithAzure
-    let options = {
-        method: 'POST',
-        baseUrl: 'https://api.cognitive.microsofttranslator.com/',
-        url: 'translate',
-        qs: {
-          'api-version': '3.0',
-          'to': [ language ]
-        },
-        headers: {
-          'Ocp-Apim-Subscription-Key': process.env.AZURE_KEY,
-          'Content-type': 'application/json',
-          'X-ClientTraceId': uuidv4().toString()
-        },
-        body: [{
-              'text': filteredMessage
-        }],
-        json: true,
-    };
+	try {
+	    // Get Translation from translateMessageWithAzure
+		let body = await fetch( `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${ language }`, {
+			method: "POST",
+	        headers: {
+	          'Ocp-Apim-Subscription-Key': process.env.AZURE_KEY,
+	          'Content-type': 'application/json',
+	          'X-ClientTraceId': uuidv4().toString()
+	        },
+			body: JSON.stringify([
+				{
+	              'text': filteredMessage
+		        }
+			]),
+		} ).then( r => r.json() );
+		// TODO: batch translations into single calls by time for performance
 
-    request( options, function( err, res, body ) {
-      console.log( err, body, body[ 0 ].translations );
+		// console.log( body );
+      // console.log( body, body[ 0 ].translations );
         translationCalls++;
         if( translationCalls % 50 === 0 ) console.log( "API calls" + translationCalls );
-        // Error handling
-        if( err ) {
-          return console.log( "Error in translation request", err );
-        }
-        try {
-          if( body && body.length > 0 ) {
-            var resp = {
-              text: [ body[ 0 ].translations[ 0 ].text ],
-              lang: body[ 0 ].detectedLanguage.language
-            };
-            sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, true );
-            // Cache translation
-            if( filteredMessage.length < maxMessageLength ) {
-              const translation = translations.get( filteredMessage ) || {};
-              translation[ language ] = resp;
-              translations.put( filteredMessage, translation );
-            }
-            else {
-              if( memTranslations.length >= memLimit ) {
-                memTranslations.splice( 0, 1 );
-              }
-              memTranslations.push( {
-                message: filteredMessage,
-                [ language ]: resp
-              } );
-            }
-          }
-        } catch( e ) {
-          console.log( e );
-        }
-    });
+
+      if( body && body.length > 0 ) {
+        var resp = {
+          text: [ body[ 0 ].translations[ 0 ].text ],
+          lang: body[ 0 ].detectedLanguage.language
+        };
+        sendTranslationFromResponse( language, filteredMessage, channel, userstate, resp, app, true );
+
+        // Cache translation
+		const translation = await ComfyDB.Get( filteredMessage ) || {};
+		translation[ language ] = resp;
+		await ComfyDB.Store( filteredMessage, translation );
+      }
+	}
+	catch( err ) {
+		return console.log( "Error in translation request", err );
+	}
   }
 }
 
@@ -224,7 +203,7 @@ async function addTranslation( message, langFrom, translation, langTo ) {
 		'entry.1190780107': langTo,
 	});
 }
-loadTranslations();
+// loadTranslations();
 
 function translateMessageComfyTranslations( channel, userstate, message, app ) {
   try {

@@ -230,5 +230,16 @@ add( [ "languageignore", "langignore" ],
     }
   }
 )
+add( [ "languageinfo", "langinfo", "languageabout", "langabout" ],
+  ( { client }, channelName ) => {
+    client.say( channelName, "My translations are sponsored thanks to the Microsoft Azure team! Learn more about Azure AI at: https://aka.ms/instafluff-social" );
+  },
+  {
+    modOnly: false,
+    description: {
+      en: 'about ChatTranslator'
+    }
+  }
+)
 
 module.exports = { runCommand, commands }

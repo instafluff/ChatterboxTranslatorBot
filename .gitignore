@@ -64,3 +64,5 @@ typings/
 .next
 translations.db
 channels.db
+
+/data

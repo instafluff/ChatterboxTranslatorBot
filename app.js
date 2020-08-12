@@ -3,6 +3,7 @@ require( 'dotenv' ).config();
 const tmi = require( 'tmi.js' );
 const request = require( 'request' );
 const Storage = require( 'node-storage' );
+const ComfyDB = require( "comfydb" );
 
 const { runCommand } = require( './command' );
 const { translateMessage, translateMessageWithAzure, translateMessageComfyTranslations } = require( './translate' );
@@ -36,15 +37,18 @@ const client = new tmi.Client({
   },
 } );
 client.on( 'chat', onMessage );
-client.on( 'connected', ( address, port ) => console.log( `Connected: ${ address }:${ port }` ) );
+client.on( 'connected', ( address, port ) => {
+	console.log( `Connected: ${ address }:${ port }` );
+} );
 client.on( 'reconnect', () => console.log( 'Reconnecting' ) );
 client.connect();
+ComfyDB.Connect();
 
 const appInjection = { client, prefixRegex, botChannelName, store, channels, translations, request }
 
 const errorPrefix = "\n[onMessage]  "
 
-function onMessage( channel, userstate, message, self ) {
+async function onMessage( channel, userstate, message, self ) {
   if( self ) return;
   if( userstate.username === "chattranslator" ) return;
 
@@ -52,8 +56,9 @@ function onMessage( channel, userstate, message, self ) {
     if( message.match( prefixRegex ) ) {
       runCommand( channel, userstate, message, appInjection )
     } else if( channels[ channel ] ) {
-      // translateMessageWithAzure( channel, userstate, message, appInjection )
-	  translateMessageComfyTranslations( channel, userstate, message, appInjection );
+		// translateMessage( channel, userstate, message, appInjection );
+      await translateMessageWithAzure( channel, userstate, message, appInjection )
+	  // translateMessageComfyTranslations( channel, userstate, message, appInjection );
     }
   } catch( error ) {
     console.log(
