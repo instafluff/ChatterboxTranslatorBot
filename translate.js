@@ -1,6 +1,8 @@
 const uuidv4 = require('uuid/v4');
 const fetch = require( "node-fetch" );
 const ComfyDB = require( "comfydb" );
+const fs = require( "fs" );
+const ignorelist = fs.readFileSync( "ignore-words.txt", "utf-8" ).split( ", " ).filter( Boolean );
 const { naughtyToNice, hasBlacklistedWord } = require( './censor' );
 const { parseEmotes, whitespaceRegex } = require( './emotes' );
 const languages = require( './languages' );
@@ -22,6 +24,9 @@ function translateMessage( channel, userstate, message, app ) {
     // Check if the language is already the target language
     const result = langDetect( message );
     if( result.language === language ) return;
+
+	// Ignorelist Filtering
+	if( ignorelist.some( w => message === w ) ) return;
 
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
@@ -102,6 +107,9 @@ async function translateMessageWithAzure( channel, userstate, message, app ) {
     // Check if the language is already the target language
     const result = langDetect( message );
     if( result.language === language ) return;
+	
+	// Ignorelist Filtering
+	if( ignorelist.some( w => message === w ) ) return;
 
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
