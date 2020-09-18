@@ -109,7 +109,7 @@ async function translateMessageWithAzure( channel, userstate, message, app ) {
     if( result.language === language ) return;
 
 	// Ignorelist Filtering
-	if( ignorelist.some( w => message === w ) ) return;
+	if( ignorelist.some( w => message.toLowerCase() === w ) ) return;
 
     // Blacklist filtering
     if( hasBlacklistedWord( message ) ) return;
