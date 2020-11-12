@@ -30,7 +30,7 @@ const client = new tmi.Client({
 	  secure: true,
 	  reconnect: true,
   },
-  channels: Object.keys( channels ).concat( botChannelName ),
+  channels: [ botChannelName ].concat( Object.keys( channels ) ),
   identity: {
 	  username: process.env.TWITCHUSER,
 	  password: process.env.OAUTH
@@ -39,9 +39,6 @@ const client = new tmi.Client({
 client.on( 'chat', onMessage );
 client.on( 'connected', ( address, port ) => {
 	console.log( `Connected: ${ address }:${ port }` );
-} );
-client.on( 'error', ( message ) => {
-	console.log( `Error: ${ message }` );
 } );
 client.on( 'notice', ( channel, msgid, message ) => {
 	console.log( `Notice: ${ channel } ${ msgid } ${ message }` );
