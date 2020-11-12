@@ -28,7 +28,7 @@ console.log( serverChannels );
 (async () => {
 	// Check and clean up channels
 	for( let i = 0; i < serverChannels.length; i += 100 ) {
-		let chans = serverChannels.slice( i, i + 100 ).replace( "#", "" );
+		let chans = serverChannels.slice( i, i + 100 ).map( x => x.replace( "#", "" ) );
 		let result = await fetch( `https://api.twitch.tv/helix/user?login=${chans.join( "&login=" )}`, {
 			headers: {
 				"Client-ID": process.env.CLIENT_ID,
