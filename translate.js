@@ -131,7 +131,7 @@ async function translateMessageWithAzure( channel, userstate, message, app ) {
     // Caching
 	const cachedTranslation = await ComfyDB.Get( filteredMessage, "translations" ) || undefined;
 	if( cachedTranslation && cachedTranslation[ language ] ) {
-		console.log( "found cache!", cachedTranslation );
+		// console.log( "found cache!", cachedTranslation );
 	  return sendTranslationFromResponse( language, filteredMessage, channel, userstate, cachedTranslation, app );
     }
 
