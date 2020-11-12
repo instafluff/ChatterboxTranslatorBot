@@ -29,7 +29,7 @@ console.log( serverChannels );
 	// Check and clean up channels
 	for( let i = 0; i < serverChannels.length; i += 100 ) {
 		let chans = serverChannels.slice( i, i + 100 ).map( x => x.replace( "#", "" ) );
-		let result = await fetch( `https://api.twitch.tv/helix/user?login=${chans.join( "&login=" )}`, {
+		let result = await fetch( `https://api.twitch.tv/helix/users?login=${chans.join( "&login=" )}`, {
 			headers: {
 				"Client-ID": process.env.CLIENT_ID,
 				"Authorization": `Bearer ${process.env.API_AUTH}`
@@ -37,7 +37,13 @@ console.log( serverChannels );
 		} ).then( r => r.json() );
 		let existing = result.data.map( x => x.login );
 		let badChans = chans.filter( c => !existing.includes( c ) );
-		console.log( "BAD CHANNELS:", badChans );
+		console.log( "Cleaning bad channels:", badChans );
+		badChans.forEach( c => {
+			// Leave bad channel
+			console.log( "Removing bad channel:", channels[ "#" + c ] );
+			delete channels[ "#" + channel ];
+		});
+		store.put( "channels", channels );
 	}
 
 	const client = new tmi.Client({
