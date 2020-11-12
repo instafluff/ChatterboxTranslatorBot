@@ -41,7 +41,7 @@ console.log( serverChannels );
 		badChans.forEach( c => {
 			// Leave bad channel
 			console.log( "Removing bad channel:", channels[ "#" + c ] );
-			delete channels[ "#" + channel ];
+			delete channels[ "#" + c ];
 		});
 		store.put( "channels", channels );
 	}
