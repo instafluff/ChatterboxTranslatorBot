@@ -48,6 +48,9 @@ client.on( 'notice', ( channel, msgid, message ) => {
 	switch( msgid ) {
 	case "msg_banned":
 		// Leave this channel
+		console.log( "Leaving banned channel:", channels[ channel ] );
+		delete channels[ channel ];
+		store.put( "channels", channels );
 		break;
 	}
 } );
