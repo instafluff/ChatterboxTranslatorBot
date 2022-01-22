@@ -27,7 +27,7 @@
     "comfysheets": "^1.0.0",
     "dotenv": "^6.2.0",
     "emoji-regex": "^7.0.1",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^3.1.1",
     "node-storage": "0.0.7",
     "nosql": "^6.1.0",
     "request": "^2.88.2",
